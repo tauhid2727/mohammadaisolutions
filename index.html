@@ -254,12 +254,22 @@
     document.getElementById("y").textContent = new Date().getFullYear();
   </script>  <!-- Flowise Chatbot -->
   <script type="module">
-    import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
+  import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed@latest/dist/web.js";
 
-    Chatbot.init({
-      chatflowid: "207032fc-5039-49c5-b753-eb306095774a",
-      apiHost: "https://cloud.flowiseai.com",
-    });
-  </script>
+  Chatbot.init({
+    chatflowid: "207032fc-5039-49c5-b753-eb306095774a",
+    apiHost: "https://cloud.flowiseai.com",
+    chatflowConfig: {},
+    theme: {
+      button: {
+        backgroundColor: "#22c55e",
+        right: 20,
+        bottom: 20,
+        size: "medium",
+        iconColor: "white"
+      }
+    }
+  });
+</script>
 </body>
 </html>
