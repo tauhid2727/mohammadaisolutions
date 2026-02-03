@@ -1,77 +1,84 @@
-export async function handler(event) {
-  // CORS preflight
-  if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-      },
-      body: "",
-    };
-  }
-
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: "Method Not Allowed",
-    };
-  }
-
+export default async (req, context) => {
   try {
-    const { chatflowId, question, overrideConfig } = JSON.parse(event.body || "{}");
+    // Only allow POST (and reply to OPTIONS for CORS)
+    if (req.method === "OPTIONS") {
+      return new Response("", {
+        status: 200,
+        headers: corsHeaders()
+      });
+    }
+
+    if (req.method !== "POST") {
+      return new Response("Method Not Allowed", {
+        status: 405,
+        headers: corsHeaders()
+      });
+    }
+
+    const FLOWISE_URL = process.env.FLOWISE_URL;       // e.g. https://chat.mohammadaisolutions.com
+    const FLOWISE_API_KEY = process.env.FLOWISE_API_KEY; // your Flowise API key
+
+    if (!FLOWISE_URL) {
+      console.log("Missing env var: FLOWISE_URL");
+      return json({ error: "Missing FLOWISE_URL env var" }, 500);
+    }
+    if (!FLOWISE_API_KEY) {
+      console.log("Missing env var: FLOWISE_API_KEY");
+      return json({ error: "Missing FLOWISE_API_KEY env var" }, 500);
+    }
+
+    const body = await req.json();
+    const chatflowId = body.chatflowId;
+    const question = body.question;
 
     if (!chatflowId || !question) {
-      return {
-        statusCode: 400,
-        headers: { "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify({ error: "Missing chatflowId or question" }),
-      };
+      console.log("Bad request body:", body);
+      return json({ error: "chatflowId and question are required" }, 400);
     }
 
-    const base = (process.env.FLOWISE_URL || "").replace(/\/$/, "");
-    if (!base) {
-      return {
-        statusCode: 500,
-        headers: { "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify({ error: "FLOWISE_URL env var is missing" }),
-      };
-    }
+    const target = `${FLOWISE_URL.replace(/\/$/, "")}/api/v1/prediction/${chatflowId}`;
 
-    // ✅ This is the correct Flowise prediction endpoint format:
-    const url = `${base}/api/v1/prediction/${chatflowId}`;
+    console.log("Proxying to:", target);
 
-    const headers = { "Content-Type": "application/json" };
-
-    // Only send auth header if you actually set a key
-    if (process.env.FLOWISE_API_KEY) {
-      headers["Authorization"] = `Bearer ${process.env.FLOWISE_API_KEY}`;
-    }
-
-    const resp = await fetch(url, {
+    const upstream = await fetch(target, {
       method: "POST",
-      headers,
-      body: JSON.stringify({ question, overrideConfig }),
+      headers: {
+        "Content-Type": "application/json",
+        // Most common Flowise API key pattern:
+        "Authorization": `Bearer ${FLOWISE_API_KEY}`
+      },
+      body: JSON.stringify({ question })
     });
 
-    const text = await resp.text();
-    return {
-      statusCode: resp.status,
+    const text = await upstream.text();
+    console.log("Upstream status:", upstream.status);
+    // Log first part only, to avoid huge logs
+    console.log("Upstream body (first 300 chars):", text.slice(0, 300));
+
+    return new Response(text, {
+      status: upstream.status,
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Content-Type": resp.headers.get("content-type") || "application/json",
-      },
-      body: text,
-    };
+        ...corsHeaders(),
+        "Content-Type": "application/json"
+      }
+    });
   } catch (err) {
-    return {
-      statusCode: 500,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ error: err.message || String(err) }),
-    };
+    console.log("Function error:", err);
+    return json({ error: "fetch failed", detail: String(err) }, 500);
   }
+};
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Methods": "POST, OPTIONS"
+  };
+}
+
+function json(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { ...corsHeaders(), "Content-Type": "application/json" }
+  });
 }
