@@ -1,78 +1,77 @@
-// netlify/functions/flowise-proxy.js
-
 export async function handler(event) {
-  // 1) Handle CORS preflight
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, x-api-key",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-
+  // CORS preflight
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers: corsHeaders, body: "" };
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+      },
+      body: "",
+    };
   }
 
-  // 2) Only allow POST
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      headers: corsHeaders,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: "Method Not Allowed",
     };
   }
 
   try {
-    const FLOWISE_URL = process.env.FLOWISE_URL; // e.g. https://chat.mohammadaisolutions.com
-    const FLOWISE_API_KEY = process.env.FLOWISE_API_KEY;
+    const { chatflowId, question, overrideConfig } = JSON.parse(event.body || "{}");
 
-    if (!FLOWISE_URL) {
-      return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: "Missing FLOWISE_URL env var" }),
-      };
-    }
-
-    // 3) Expect payload like: { chatflowId: "...", question: "...", ... }
-    const body = JSON.parse(event.body || "{}");
-    const chatflowId = body.chatflowId;
-
-    if (!chatflowId) {
+    if (!chatflowId || !question) {
       return {
         statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: "Missing chatflowId in request body" }),
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ error: "Missing chatflowId or question" }),
       };
     }
 
-    // 4) Forward to Flowise Prediction endpoint
-    const targetUrl = `${FLOWISE_URL.replace(/\/$/, "")}/api/v1/prediction/${chatflowId}`;
+    const base = (process.env.FLOWISE_URL || "").replace(/\/$/, "");
+    if (!base) {
+      return {
+        statusCode: 500,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ error: "FLOWISE_URL env var is missing" }),
+      };
+    }
 
-    const res = await fetch(targetUrl, {
+    // ✅ This is the correct Flowise prediction endpoint format:
+    const url = `${base}/api/v1/prediction/${chatflowId}`;
+
+    const headers = { "Content-Type": "application/json" };
+
+    // Only send auth header if you actually set a key
+    if (process.env.FLOWISE_API_KEY) {
+      headers["Authorization"] = `Bearer ${process.env.FLOWISE_API_KEY}`;
+    }
+
+    const resp = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-
-        // Some Flowise setups use Bearer, some use x-api-key.
-        // Sending both is fine; Flowise will ignore the one it doesn't use.
-        ...(FLOWISE_API_KEY ? { Authorization: `Bearer ${FLOWISE_API_KEY}` } : {}),
-        ...(FLOWISE_API_KEY ? { "x-api-key": FLOWISE_API_KEY } : {}),
-      },
-      body: JSON.stringify(body),
+      headers,
+      body: JSON.stringify({ question, overrideConfig }),
     });
 
-    const text = await res.text();
-
+    const text = await resp.text();
     return {
-      statusCode: res.status,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      statusCode: resp.status,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Content-Type": resp.headers.get("content-type") || "application/json",
+      },
       body: text,
     };
   } catch (err) {
     return {
       statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: err?.message || "Proxy error" }),
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ error: err.message || String(err) }),
     };
   }
 }
