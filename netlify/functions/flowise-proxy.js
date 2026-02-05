@@ -1,3 +1,5 @@
+import nodemailer from "nodemailer";
+
 export default async (req) => {
   try {
     // CORS preflight
@@ -8,22 +10,27 @@ export default async (req) => {
     if (req.method !== "POST") {
       return new Response("Method Not Allowed", {
         status: 405,
-        headers: corsHeaders(),
+        headers: corsHeaders()
       });
     }
 
-    const FLOWISE_URL = process.env.FLOWISE_URL; // https://chat.mohammadaisolutions.com
+    const FLOWISE_URL = process.env.FLOWISE_URL;
     const FLOWISE_API_KEY = process.env.FLOWISE_API_KEY;
 
-    if (!FLOWISE_URL) return json({ error: "Missing FLOWISE_URL env var" }, 500);
-    if (!FLOWISE_API_KEY) return json({ error: "Missing FLOWISE_API_KEY env var" }, 500);
+    const {
+      EMAIL_HOST,
+      EMAIL_PORT,
+      EMAIL_USER,
+      EMAIL_PASS,
+      EMAIL_TO
+    } = process.env;
+
+    if (!FLOWISE_URL || !FLOWISE_API_KEY) {
+      return json({ error: "Missing Flowise env vars" }, 500);
+    }
 
     const body = await req.json();
-    const { chatflowId, question, overrideConfig, sessionId } = body || {};
-
-    if (!chatflowId || !question) {
-      return json({ error: "chatflowId and question are required" }, 400);
-    }
+    const { chatflowId, question } = body;
 
     const target = `${FLOWISE_URL.replace(/\/$/, "")}/api/v1/prediction/${chatflowId}`;
 
@@ -31,53 +38,108 @@ export default async (req) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${FLOWISE_API_KEY}`,
+        Authorization: `Bearer ${FLOWISE_API_KEY}`
       },
-      body: JSON.stringify({
-        question,
-        ...(overrideConfig ? { overrideConfig } : {}),
-        ...(sessionId ? { sessionId } : {}),
-      }),
+      body: JSON.stringify({ question })
     });
 
-    const upstreamText = await upstream.text();
+    const text = await upstream.text();
 
-    // If upstream sends HTML, return it as text so you can see the real error fast
-    let data;
+    // 🔍 Extract LEAD_JSON safely
     try {
-      data = JSON.parse(upstreamText);
-    } catch (e) {
-      console.log("Upstream returned non-JSON (first 300):", upstreamText.slice(0, 300));
-      return new Response(upstreamText, {
-        status: upstream.status,
-        headers: { ...corsHeaders(), "Content-Type": "text/plain" },
-      });
+      const match = text.match(/<LEAD_JSON>([\s\S]*?)<\/LEAD_JSON>/);
+
+      if (match) {
+        const lead = JSON.parse(match[1]);
+
+        if (lead.leadCaptured === true) {
+          await sendLeadEmail({
+            EMAIL_HOST,
+            EMAIL_PORT,
+            EMAIL_USER,
+            EMAIL_PASS,
+            EMAIL_TO,
+            lead
+          });
+        }
+      }
+    } catch (emailErr) {
+      console.log("Lead email error (non-blocking):", emailErr);
     }
 
-    // Remove LEAD_JSON block from visitor-visible text (if present)
-    const rawText = data?.text ?? "";
-    const cleanText = rawText.replace(/<LEAD_JSON>[\s\S]*?<\/LEAD_JSON>/i, "").trim();
-    data.text = cleanText;
+    // 🔁 Always return Flowise response unchanged
+    return new Response(text, {
+      status: upstream.status,
+      headers: {
+        ...corsHeaders(),
+        "Content-Type": "application/json"
+      }
+    });
 
-    return json(data, upstream.status);
   } catch (err) {
     console.log("Function error:", err);
-    return json({ error: "proxy failed", detail: String(err) }, 500);
+    return json({ error: "Internal error" }, 500);
   }
 };
+
+async function sendLeadEmail({
+  EMAIL_HOST,
+  EMAIL_PORT,
+  EMAIL_USER,
+  EMAIL_PASS,
+  EMAIL_TO,
+  lead
+}) {
+  const transporter = nodemailer.createTransport({
+    host: EMAIL_HOST,
+    port: Number(EMAIL_PORT),
+    secure: Number(EMAIL_PORT) === 465,
+    auth: {
+      user: EMAIL_USER,
+      pass: EMAIL_PASS
+    }
+  });
+
+  const subject = `🔥 New Lead — ${lead.businessName || "Unknown Business"}`;
+
+  const body = `
+New lead captured from Mohammad AI Solutions
+
+Name: ${lead.fullName}
+Business: ${lead.businessName}
+Industry: ${lead.industry}
+Preferred Contact: ${lead.preferredContact}
+Email: ${lead.email || "N/A"}
+Phone: ${lead.phone || "N/A"}
+Has Website: ${lead.hasWebsite}
+Volume: ${lead.monthlyVisitorsOrLeads}
+Service Interest: ${lead.serviceInterest}
+
+Summary:
+${lead.summary || "—"}
+`;
+
+  await transporter.sendMail({
+    from: EMAIL_USER,
+    to: EMAIL_TO,
+    subject,
+    text: body
+  });
+}
 
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "POST, OPTIONS"
   };
 }
 
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { ...corsHeaders(), "Content-Type": "application/json" },
+    headers: { ...corsHeaders(), "Content-Type": "application/json" }
   });
 }
+
 
