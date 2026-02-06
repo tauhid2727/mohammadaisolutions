@@ -1,153 +1,123 @@
 const nodemailer = require("nodemailer");
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 exports.handler = async (event) => {
-  // CORS
-  const headers = corsHeaders();
+  // Handle CORS preflight
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: "",
+    };
+  }
+
+  // Allow POST only
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      headers: corsHeaders,
+      body: JSON.stringify({ ok: false, error: "Method Not Allowed" }),
+    };
+  }
 
   try {
-    // Handle preflight
-    if (event.httpMethod === "OPTIONS") {
-      return { statusCode: 200, headers, body: "" };
-    }
+    // 🔐 REQUIRED ENV VARS (fail fast)
+    const {
+      EMAIL_HOST,
+      EMAIL_PORT,
+      EMAIL_USER,
+      EMAIL_PASS,
+      EMAIL_TO,
+      EMAIL_FROM,
+    } = process.env;
 
-    // Only allow POST
-    if (event.httpMethod !== "POST") {
-      return { statusCode: 405, headers, body: "Method Not Allowed" };
-    }
-
-    // Parse body safely
-    const body = safeJsonParse(event.body);
-
-    // Accept BOTH formats (so your tests won't break)
-    const fullName =
-      body.fullName || body.name || body.contactName || body.full_name || "";
-    const email = body.email || "";
-    const phone = body.phone || "";
-    const preferredContact = body.preferredContact || body.preferred_contact || "";
-    const businessName =
-      body.businessName || body.business || body.company || body.business_name || "";
-    const industry = body.industry || "";
-    const hasWebsite = body.hasWebsite ?? body.has_website ?? "";
-    const monthlyVisitorsOrLeads =
-      body.monthlyVisitorsOrLeads || body.monthlyVisitors || body.monthlyLeads || "";
-    const serviceInterest = body.serviceInterest || body.service || "";
-    const budgetRange = body.budgetRange || body.budget || "";
-    const timeline = body.timeline || "";
-    const summary = body.summary || body.message || "";
-
-    // Basic guard: must have at least one meaningful field
-    if (![fullName, businessName, phone, email, summary].some((v) => String(v).trim())) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ ok: false, error: "Missing lead fields" }),
-      };
-    }
-
-    // Validate required ENV (prevents timeouts due to missing config)
-    const required = [
-      "EMAIL_HOST",
-      "EMAIL_PORT",
-      "EMAIL_USER",
-      "EMAIL_PASS",
-      "EMAIL_TO",
-      "EMAIL_FROM",
-    ];
-    const missing = required.filter((k) => !process.env[k]);
-    if (missing.length) {
+    if (
+      !EMAIL_HOST ||
+      !EMAIL_USER ||
+      !EMAIL_PASS ||
+      !EMAIL_TO ||
+      !EMAIL_FROM
+    ) {
       return {
         statusCode: 500,
-        headers,
+        headers: corsHeaders,
         body: JSON.stringify({
           ok: false,
-          error: `Missing environment variables: ${missing.join(", ")}`,
+          error: "Missing required email environment variables",
         }),
       };
     }
 
-    // Create transporter (FAST FAIL so Netlify won't hit 30s timeout)
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT || 587),
-      secure: false,          // 587 uses STARTTLS
-      requireTLS: true,       // force STARTTLS
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
+    // Parse body
+    const data = JSON.parse(event.body || "{}");
 
-      // ✅ Important: fail fast
+    const {
+      name,
+      email,
+      phone,
+      business,
+      message,
+    } = data;
+
+    if (!name && !email && !phone && !business) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ ok: false, error: "Empty lead" }),
+      };
+    }
+
+    // ⚡ FAST SMTP (no hangs)
+    const transporter = nodemailer.createTransport({
+      host: EMAIL_HOST,
+      port: Number(EMAIL_PORT || 587),
+      secure: false,
+      auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASS,
+      },
       connectionTimeout: 10_000,
       greetingTimeout: 10_000,
       socketTimeout: 10_000,
-
-      tls: { minVersion: "TLSv1.2" },
     });
 
-    const to = process.env.EMAIL_TO;
-    const from = process.env.EMAIL_FROM;
+    await transporter.sendMail({
+      from: EMAIL_FROM,
+      to: EMAIL_TO,
+      subject: `New Lead — ${name || business || "Website"}`,
+      text: `
+New Lead Received
 
-    const subject = `New lead: ${fullName || businessName || "Unknown"}`;
+Name: ${name || ""}
+Business: ${business || ""}
+Email: ${email || ""}
+Phone: ${phone || ""}
 
-    const text = `
-NEW LEAD RECEIVED
+Message:
+${message || ""}
 
-Name: ${fullName}
-Business: ${businessName}
-Preferred contact: ${preferredContact}
-Email: ${email}
-Phone: ${phone}
-
-Industry: ${industry}
-Has website: ${hasWebsite}
-Monthly visitors/leads: ${monthlyVisitorsOrLeads}
-
-Service interest: ${serviceInterest}
-Budget range: ${budgetRange}
-Timeline: ${timeline}
-
-Summary:
-${summary}
-
-(Generated by Netlify Function)
-`.trim();
-
-    // Verify connection (optional but helpful; still fast-fails)
-    await transporter.verify();
-
-    // Send email
-    await transporter.sendMail({ from, to, subject, text });
+Sent from mohammadaisolutions.com
+      `,
+    });
 
     return {
       statusCode: 200,
-      headers,
+      headers: corsHeaders,
       body: JSON.stringify({ ok: true }),
     };
   } catch (err) {
     return {
       statusCode: 500,
-      headers,
+      headers: corsHeaders,
       body: JSON.stringify({
         ok: false,
-        error: err && err.message ? err.message : String(err),
+        error: err.message || "Internal error",
       }),
     };
   }
 };
-
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
-
-function safeJsonParse(raw) {
-  try {
-    if (!raw) return {};
-    return JSON.parse(raw);
-  } catch {
-    return {};
-  }
-}
