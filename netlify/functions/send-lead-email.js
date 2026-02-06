@@ -1,123 +1,76 @@
-const nodemailer = require("nodemailer");
+import { Resend } from "resend";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-exports.handler = async (event) => {
-  // Handle CORS preflight
-  if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: "",
-    };
-  }
-
-  // Allow POST only
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      headers: corsHeaders,
-      body: JSON.stringify({ ok: false, error: "Method Not Allowed" }),
-    };
-  }
-
+export async function handler(event) {
   try {
-    // 🔐 REQUIRED ENV VARS (fail fast)
-    const {
-      EMAIL_HOST,
-      EMAIL_PORT,
-      EMAIL_USER,
-      EMAIL_PASS,
-      EMAIL_TO,
-      EMAIL_FROM,
-    } = process.env;
+    // CORS preflight
+    if (event.httpMethod === "OPTIONS") {
+      return { statusCode: 200, headers: cors(), body: "" };
+    }
 
-    if (
-      !EMAIL_HOST ||
-      !EMAIL_USER ||
-      !EMAIL_PASS ||
-      !EMAIL_TO ||
-      !EMAIL_FROM
-    ) {
+    // Only allow POST
+    if (event.httpMethod !== "POST") {
       return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({
-          ok: false,
-          error: "Missing required email environment variables",
-        }),
+        statusCode: 405,
+        headers: cors(),
+        body: "Method Not Allowed"
       };
     }
 
-    // Parse body
-    const data = JSON.parse(event.body || "{}");
+    const body = JSON.parse(event.body || "{}");
 
-    const {
-      name,
-      email,
-      phone,
-      business,
-      message,
-    } = data;
+    const name = body.name || "";
+    const email = body.email || "";
+    const phone = body.phone || "";
+    const business = body.business || "";
+    const message = body.message || "";
 
-    if (!name && !email && !phone && !business) {
+    // Require at least one contact method
+    if (!email && !phone) {
       return {
         statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({ ok: false, error: "Empty lead" }),
+        headers: cors(),
+        body: JSON.stringify({ ok: false, error: "Missing email or phone" })
       };
     }
 
-    // ⚡ FAST SMTP (no hangs)
-    const transporter = nodemailer.createTransport({
-      host: EMAIL_HOST,
-      port: Number(EMAIL_PORT || 587),
-      secure: false,
-      auth: {
-        user: EMAIL_USER,
-        pass: EMAIL_PASS,
-      },
-      connectionTimeout: 10_000,
-      greetingTimeout: 10_000,
-      socketTimeout: 10_000,
-    });
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM,
+      to: process.env.EMAIL_TO,
+      subject: `New Lead: ${name || "Unknown"}`,
+      text: `New Lead Received
 
-    await transporter.sendMail({
-      from: EMAIL_FROM,
-      to: EMAIL_TO,
-      subject: `New Lead — ${name || business || "Website"}`,
-      text: `
-New Lead Received
-
-Name: ${name || ""}
-Business: ${business || ""}
-Email: ${email || ""}
-Phone: ${phone || ""}
+Name: ${name}
+Business: ${business}
+Email: ${email}
+Phone: ${phone}
 
 Message:
-${message || ""}
+${message}
 
-Sent from mohammadaisolutions.com
-      `,
+(Source: Website / Chatbot)
+`
     });
 
     return {
       statusCode: 200,
-      headers: corsHeaders,
-      body: JSON.stringify({ ok: true }),
+      headers: cors(),
+      body: JSON.stringify({ ok: true })
     };
   } catch (err) {
     return {
       statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({
-        ok: false,
-        error: err.message || "Internal error",
-      }),
+      headers: cors(),
+      body: JSON.stringify({ ok: false, error: err.message })
     };
   }
-};
+}
+
+function cors() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS"
+  };
+}
