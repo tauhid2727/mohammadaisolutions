@@ -5,7 +5,14 @@ const corsHeaders = () => ({
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 });
-
+const token = event.headers["x-lead-token"] || event.headers["X-Lead-Token"];
+if (!process.env.LEAD_TOKEN || token !== process.env.LEAD_TOKEN) {
+  return {
+    statusCode: 401,
+    headers: corsHeaders(),
+    body: JSON.stringify({ ok: false, error: "Unauthorized" })
+  };
+}
 exports.handler = async (event) => {
   try {
     // CORS preflight
