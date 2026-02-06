@@ -17,21 +17,18 @@ exports.handler = async (event) => {
     }
 
     if (event.httpMethod !== "POST") {
-      return {
-        statusCode: 405,
-        body: "Method Not Allowed",
-      };
+      return { statusCode: 405, body: "Method Not Allowed" };
     }
 
     const data = JSON.parse(event.body);
 
-    // 🔴 THIS is the missing part in your current setup
+    // 🔴 THIS is the critical line — must run
     const email = await resend.emails.send({
-      from: "onboarding@resend.dev", // SAFE sender
-      to: ["tauhid27@gmail.com"],     // change if needed
-      subject: "🚀 New Lead – Mohammad AI Solutions",
+      from: "Mohammad AI <onboarding@resend.dev>", // SAFE TEST SENDER
+      to: ["tauhid27@gmail.com"],                  // your inbox
+      subject: "🔥 New Lead Test",
       html: `
-        <h2>New Lead Received</h2>
+        <h2>New Lead</h2>
         <pre>${JSON.stringify(data, null, 2)}</pre>
       `,
     });
@@ -43,9 +40,14 @@ exports.handler = async (event) => {
     };
 
   } catch (err) {
+    console.error("RESEND ERROR:", err);
+
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message }),
+      body: JSON.stringify({
+        ok: false,
+        error: err.message || err,
+      }),
     };
   }
 };
