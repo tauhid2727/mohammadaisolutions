@@ -1,18 +1,22 @@
 const { Resend } = require("resend");
 
+// ✅ CORS (must include x-lead-token)
 const corsHeaders = () => ({
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, x-lead-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 });
-const token = event.headers["x-lead-token"] || event.headers["X-Lead-Token"];
-if (!process.env.LEAD_TOKEN || token !== process.env.LEAD_TOKEN) {
-  return {
-    statusCode: 401,
-    headers: corsHeaders(),
-    body: JSON.stringify({ ok: false, error: "Unauthorized" })
-  };
+
+// ✅ small helper to avoid HTML breaking
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
+
 exports.handler = async (event) => {
   try {
     // CORS preflight
@@ -22,7 +26,25 @@ exports.handler = async (event) => {
 
     // Allow POST only
     if (event.httpMethod !== "POST") {
-      return { statusCode: 405, headers: corsHeaders(), body: "Method Not Allowed" };
+      return {
+        statusCode: 405,
+        headers: corsHeaders(),
+        body: JSON.stringify({ ok: false, error: "Method Not Allowed" }),
+      };
+    }
+
+    // ✅ TOKEN CHECK (MUST be inside handler)
+    const token =
+      event.headers?.["x-lead-token"] ||
+      event.headers?.["X-Lead-Token"] ||
+      event.headers?.["x-lead-token".toLowerCase()];
+
+    if (!process.env.LEAD_TOKEN || token !== process.env.LEAD_TOKEN) {
+      return {
+        statusCode: 401,
+        headers: corsHeaders(),
+        body: JSON.stringify({ ok: false, error: "Unauthorized" }),
+      };
     }
 
     // Parse body
@@ -58,23 +80,36 @@ exports.handler = async (event) => {
 
     const resend = new Resend(RESEND_API_KEY);
 
-    const email = await resend.emails.send({
+    const result = await resend.emails.send({
       from: EMAIL_FROM,
       to: [EMAIL_TO],
       ...(EMAIL_CC ? { cc: [EMAIL_CC] } : {}),
-      subject: "🔥 New Lead",
+      subject: `🔥 New Lead — ${data.fullName || "Website"}`,
       html: `
-        <h2>New Lead</h2>
-        <pre style="font-size:14px;white-space:pre-wrap">${escapeHtml(
-          JSON.stringify(data, null, 2)
-        )}</pre>
+        <div style="font-family: Arial, sans-serif; line-height: 1.4;">
+          <h2 style="margin:0 0 12px;">New Lead</h2>
+          <p style="margin:0 0 12px;">
+            <b>Name:</b> ${escapeHtml(data.fullName || "")}<br/>
+            <b>Business:</b> ${escapeHtml(data.businessName || "")}<br/>
+            <b>Preferred Contact:</b> ${escapeHtml(data.preferredContact || "")}<br/>
+            <b>Email:</b> ${escapeHtml(data.email || "")}<br/>
+            <b>Phone:</b> ${escapeHtml(data.phone || "")}<br/>
+            <b>Has Website:</b> ${escapeHtml(data.hasWebsite || "")}<br/>
+            <b>Service Interest:</b> ${escapeHtml(data.serviceInterest || "")}
+          </p>
+
+          <h3 style="margin:18px 0 8px;">Full Payload</h3>
+          <pre style="font-size:13px; background:#f6f6f6; padding:12px; border-radius:8px; white-space:pre-wrap;">${escapeHtml(
+            JSON.stringify(data, null, 2)
+          )}</pre>
+        </div>
       `,
     });
 
     return {
       statusCode: 200,
       headers: corsHeaders(),
-      body: JSON.stringify({ ok: true, email }),
+      body: JSON.stringify({ ok: true, id: result?.id || null }),
     };
   } catch (err) {
     return {
@@ -85,12 +120,3 @@ exports.handler = async (event) => {
   }
 };
 
-// small helper to avoid HTML breaking
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
