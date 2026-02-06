@@ -1,6 +1,6 @@
 try {
   const email = await resend.emails.send({
-    from: "Mohammad AI <onboarding@resend.dev>",
+    from: "from: "Mohammad AI <hello@mohammadaisolutions.com>",
     to: ["hello@mohammadaisolutions.com"],
     cc: ["tauhid27@gmail.com"],
     subject: "🔥 New Lead Test",
