@@ -18,75 +18,72 @@ exports.handler = async (event) => {
       return { statusCode: 405, headers: corsHeaders(), body: "Method Not Allowed" };
     }
 
-    // Env checks
-    const apiKey = process.env.RESEND_API_KEY;
-    const to = process.env.EMAIL_TO; // e.g. hello@mohammadaisolutions.com
-    const from = process.env.EMAIL_FROM || "Mohammad AI <onboarding@resend.dev>";
-    const cc = process.env.EMAIL_CC || "";
-    const bcc = process.env.EMAIL_BCC || "";
+    // Parse body
+    const data = JSON.parse(event.body || "{}");
 
-    if (!apiKey) {
-      return { statusCode: 500, headers: corsHeaders(), body: JSON.stringify({ ok: false, error: "Missing RESEND_API_KEY" }) };
+    // Env vars
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    const EMAIL_TO = process.env.EMAIL_TO;
+    const EMAIL_FROM = process.env.EMAIL_FROM;
+    const EMAIL_CC = process.env.EMAIL_CC;
+
+    if (!RESEND_API_KEY) {
+      return {
+        statusCode: 500,
+        headers: corsHeaders(),
+        body: JSON.stringify({ ok: false, error: "Missing RESEND_API_KEY" }),
+      };
     }
-    if (!to) {
-      return { statusCode: 500, headers: corsHeaders(), body: JSON.stringify({ ok: false, error: "Missing EMAIL_TO" }) };
+    if (!EMAIL_TO) {
+      return {
+        statusCode: 500,
+        headers: corsHeaders(),
+        body: JSON.stringify({ ok: false, error: "Missing EMAIL_TO" }),
+      };
+    }
+    if (!EMAIL_FROM) {
+      return {
+        statusCode: 500,
+        headers: corsHeaders(),
+        body: JSON.stringify({ ok: false, error: "Missing EMAIL_FROM" }),
+      };
     }
 
-    const resend = new Resend(apiKey);
+    const resend = new Resend(RESEND_API_KEY);
 
-    // Parse body safely
-    let data = {};
-    try {
-      data = JSON.parse(event.body || "{}");
-    } catch (e) {
-      return { statusCode: 400, headers: corsHeaders(), body: JSON.stringify({ ok: false, error: "Invalid JSON body" }) };
-    }
-
-    const subject = `🔥 New Lead: ${data.fullName || "Unknown"} (${data.serviceInterest || "Inquiry"})`;
-
-    const emailPayload = {
-      from,
-      to: [to],
-      subject,
+    const email = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: [EMAIL_TO],
+      ...(EMAIL_CC ? { cc: [EMAIL_CC] } : {}),
+      subject: "🔥 New Lead",
       html: `
         <h2>New Lead</h2>
-        <p><b>Name:</b> ${data.fullName || ""}</p>
-        <p><b>Email:</b> ${data.email || ""}</p>
-        <p><b>Phone:</b> ${data.phone || ""}</p>
-        <p><b>Preferred Contact:</b> ${data.preferredContact || ""}</p>
-        <p><b>Business:</b> ${data.businessName || ""}</p>
-        <p><b>Industry:</b> ${data.industry || ""}</p>
-        <p><b>Has Website:</b> ${data.hasWebsite || ""}</p>
-        <p><b>Monthly Visitors/Leads:</b> ${data.monthlyVisitorsOrLeads || ""}</p>
-        <p><b>Service Interest:</b> ${data.serviceInterest || ""}</p>
-        <p><b>Budget:</b> ${data.budget || ""}</p>
-        <p><b>Timeline:</b> ${data.timeline || ""}</p>
-        <p><b>Notes:</b> ${data.notes || ""}</p>
-        <hr/>
-        <pre>${JSON.stringify(data, null, 2)}</pre>
+        <pre style="font-size:14px;white-space:pre-wrap">${escapeHtml(
+          JSON.stringify(data, null, 2)
+        )}</pre>
       `,
-    };
-
-    // Optional CC/BCC
-    if (cc.trim()) emailPayload.cc = cc.split(",").map(s => s.trim()).filter(Boolean);
-    if (bcc.trim()) emailPayload.bcc = bcc.split(",").map(s => s.trim()).filter(Boolean);
-
-    const result = await resend.emails.send(emailPayload);
+    });
 
     return {
       statusCode: 200,
       headers: corsHeaders(),
-      body: JSON.stringify({ ok: true, result }),
+      body: JSON.stringify({ ok: true, email }),
     };
   } catch (err) {
     return {
       statusCode: 500,
       headers: corsHeaders(),
-      body: JSON.stringify({
-        ok: false,
-        error: err?.message || "Unknown error",
-        stack: err?.stack || "",
-      }),
+      body: JSON.stringify({ ok: false, error: err.message || String(err) }),
     };
   }
 };
+
+// small helper to avoid HTML breaking
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
