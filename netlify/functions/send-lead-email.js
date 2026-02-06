@@ -25,7 +25,8 @@ exports.handler = async (event) => {
     // 🔴 THIS is the critical line — must run
     const email = await resend.emails.send({
       from: "Mohammad AI <onboarding@resend.dev>", // SAFE TEST SENDER
-      to: ["hello@mohammadaisolutions.com"],  cc: ["tauhid27@gmail.com"],
+      to: ["hello@mohammadaisolutions.com"],  
+      cc: ["tauhid27@gmail.com"],
                 // your inbox
       subject: "🔥 New Lead Test",
       html: `
