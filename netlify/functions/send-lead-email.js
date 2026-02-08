@@ -1,6 +1,6 @@
 const { Resend } = require("resend");
 
-// ✅ CORS (include x-lead-token)
+// ✅ CORS (must include x-lead-token)
 const corsHeaders = () => ({
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type, x-lead-token",
@@ -19,12 +19,12 @@ function escapeHtml(str) {
 
 exports.handler = async (event) => {
   try {
-    // ✅ CORS preflight
+    // CORS preflight
     if (event.httpMethod === "OPTIONS") {
       return { statusCode: 200, headers: corsHeaders(), body: "" };
     }
 
-    // ✅ Allow POST only
+    // Allow POST only
     if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
@@ -33,8 +33,10 @@ exports.handler = async (event) => {
       };
     }
 
-    // ✅ TOKEN CHECK (inside handler)
-    const token = event.headers?.["x-lead-token"] || event.headers?.["X-Lead-Token"];
+    // ✅ TOKEN CHECK
+    const token =
+      event.headers?.["x-lead-token"] || event.headers?.["x-lead-token".toLowerCase()];
+
     if (!process.env.LEAD_TOKEN || token !== process.env.LEAD_TOKEN) {
       return {
         statusCode: 401,
@@ -43,34 +45,23 @@ exports.handler = async (event) => {
       };
     }
 
-    // ✅ Parse body
+    // Parse body
     const data = JSON.parse(event.body || "{}");
 
-    // ✅ Env vars
+    // Env vars
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     const EMAIL_TO = process.env.EMAIL_TO;
     const EMAIL_FROM = process.env.EMAIL_FROM;
     const EMAIL_CC = process.env.EMAIL_CC;
 
-    if (!RESEND_API_KEY) {
+    if (!RESEND_API_KEY || !EMAIL_TO || !EMAIL_FROM) {
       return {
         statusCode: 500,
         headers: corsHeaders(),
-        body: JSON.stringify({ ok: false, error: "Missing RESEND_API_KEY" }),
-      };
-    }
-    if (!EMAIL_TO) {
-      return {
-        statusCode: 500,
-        headers: corsHeaders(),
-        body: JSON.stringify({ ok: false, error: "Missing EMAIL_TO" }),
-      };
-    }
-    if (!EMAIL_FROM) {
-      return {
-        statusCode: 500,
-        headers: corsHeaders(),
-        body: JSON.stringify({ ok: false, error: "Missing EMAIL_FROM" }),
+        body: JSON.stringify({
+          ok: false,
+          error: "Missing env vars (RESEND_API_KEY / EMAIL_TO / EMAIL_FROM)",
+        }),
       };
     }
 
@@ -102,13 +93,10 @@ exports.handler = async (event) => {
       `,
     });
 
-    // ✅ Resend returns id inside result.data.id (most common)
-    const id = result?.data?.id || result?.id || null;
-
     return {
       statusCode: 200,
       headers: corsHeaders(),
-      body: JSON.stringify({ ok: true, id }),
+      body: JSON.stringify({ ok: true, id: result?.id || null }),
     };
   } catch (err) {
     return {
