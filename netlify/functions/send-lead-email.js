@@ -1,6 +1,6 @@
 const { Resend } = require("resend");
 
-// ✅ CORS (must include x-lead-token)
+// ✅ CORS (include x-lead-token)
 const corsHeaders = () => ({
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type, x-lead-token",
@@ -19,12 +19,12 @@ function escapeHtml(str) {
 
 exports.handler = async (event) => {
   try {
-    // CORS preflight
+    // ✅ CORS preflight
     if (event.httpMethod === "OPTIONS") {
       return { statusCode: 200, headers: corsHeaders(), body: "" };
     }
 
-    // Allow POST only
+    // ✅ Allow POST only
     if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
@@ -33,12 +33,8 @@ exports.handler = async (event) => {
       };
     }
 
-    // ✅ TOKEN CHECK (MUST be inside handler)
-    const token =
-      event.headers?.["x-lead-token"] ||
-      event.headers?.["X-Lead-Token"] ||
-      event.headers?.["x-lead-token".toLowerCase()];
-
+    // ✅ TOKEN CHECK (inside handler)
+    const token = event.headers?.["x-lead-token"] || event.headers?.["X-Lead-Token"];
     if (!process.env.LEAD_TOKEN || token !== process.env.LEAD_TOKEN) {
       return {
         statusCode: 401,
@@ -47,10 +43,10 @@ exports.handler = async (event) => {
       };
     }
 
-    // Parse body
+    // ✅ Parse body
     const data = JSON.parse(event.body || "{}");
 
-    // Env vars
+    // ✅ Env vars
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     const EMAIL_TO = process.env.EMAIL_TO;
     const EMAIL_FROM = process.env.EMAIL_FROM;
@@ -106,10 +102,13 @@ exports.handler = async (event) => {
       `,
     });
 
+    // ✅ Resend returns id inside result.data.id (most common)
+    const id = result?.data?.id || result?.id || null;
+
     return {
       statusCode: 200,
       headers: corsHeaders(),
-      body: JSON.stringify({ ok: true, id: result?.id || null }),
+      body: JSON.stringify({ ok: true, id }),
     };
   } catch (err) {
     return {
@@ -119,4 +118,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
