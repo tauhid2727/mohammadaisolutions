@@ -37,8 +37,8 @@ exports.handler = async (event) => {
   const upstream = await fetch(targetUrl, {
   method: event.httpMethod,
   headers: {
-    ...event.headers,          // forward everything
-    host: undefined,           // remove host header
+    "Content-Type": event.headers["content-type"] || "application/json",
+    "Accept": "application/json",
   },
   body: ["GET", "HEAD"].includes(event.httpMethod)
     ? undefined
