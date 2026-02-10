@@ -1,24 +1,26 @@
 const FLOWISE_HOST = "https://chat.mohammadaisolutions.com";
+const VERSION = "proxy-v3-cleanheaders-2026-02-10";
 
 function corsHeaders(origin) {
-  // Allow your domains (add/remove as needed)
-  const allowed = new Set([
-    "https://mohammadaisolutions.com",
-    "https://willowy-biscuit-a98742.netlify.app",
-  ]);
-
-  const allowOrigin = allowed.has(origin) ? origin : "https://mohammadaisolutions.com";
-
   return {
-    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Origin": origin || "*",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   };
 }
 
 exports.handler = async (event) => {
   const origin = event.headers.origin || "";
+
+  // Quick deployment test endpoint:
+  // https://<yoursite>/.netlify/functions/flowise-proxy/ping
+  if (event.path.endsWith("/ping")) {
+    return {
+      statusCode: 200,
+      headers: { ...corsHeaders(origin), "Content-Type": "application/json" },
+      body: JSON.stringify({ ok: true, version: VERSION }),
+    };
+  }
 
   // Preflight
   if (event.httpMethod === "OPTIONS") {
@@ -26,41 +28,38 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Netlify redirect sends /api/v1/* -> /.netlify/functions/flowise-proxy/:splat
-    // event.path will look like: "/.netlify/functions/flowise-proxy/public-chatbotConfig/<id>"
     const fnPrefix = "/.netlify/functions/flowise-proxy";
-    const splat = event.path.startsWith(fnPrefix) ? event.path.slice(fnPrefix.length) : event.path;
+    const splat = event.path.startsWith(fnPrefix)
+      ? event.path.slice(fnPrefix.length)
+      : event.path;
 
-    // splat is like "/public-chatbotConfig/<id>" or "/chatflows-streaming/<id>"
     const targetUrl = `${FLOWISE_HOST}/api/v1${splat}`;
 
-  const upstream = await fetch(targetUrl, {
-  method: event.httpMethod,
-  headers: {
-    "Content-Type": event.headers["content-type"] || "application/json",
-    "Accept": "application/json",
-  },
-  body: ["GET", "HEAD"].includes(event.httpMethod)
-    ? undefined
-    : event.body,
-});
+    // ✅ CLEAN headers only (do NOT forward Netlify headers)
+    const upstream = await fetch(targetUrl, {
+      method: event.httpMethod,
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": event.headers["content-type"] || "application/json",
+      },
+      body: ["GET", "HEAD"].includes(event.httpMethod) ? undefined : event.body,
+    });
 
-    const contentType = upstream.headers.get("content-type") || "application/json";
     const text = await upstream.text();
 
     return {
       statusCode: upstream.status,
       headers: {
         ...corsHeaders(origin),
-        "Content-Type": contentType,
+        "Content-Type": upstream.headers.get("content-type") || "application/json",
       },
       body: text,
     };
   } catch (err) {
     return {
       statusCode: 500,
-      headers: corsHeaders(origin),
-      body: JSON.stringify({ error: "Proxy error", details: String(err) }),
+      headers: { ...corsHeaders(origin), "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "Proxy error", details: String(err), version: VERSION }),
     };
   }
 };
