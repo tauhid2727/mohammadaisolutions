@@ -1,145 +1,65 @@
-import nodemailer from "nodemailer";
+const FLOWISE_HOST = "https://chat.mohammadaisolutions.com";
 
-export default async (req) => {
-  try {
-    // CORS preflight
-    if (req.method === "OPTIONS") {
-      return new Response("", { status: 200, headers: corsHeaders() });
-    }
+function corsHeaders(origin) {
+  // Allow your domains (add/remove as needed)
+  const allowed = new Set([
+    "https://mohammadaisolutions.com",
+    "https://willowy-biscuit-a98742.netlify.app",
+  ]);
 
-    if (req.method !== "POST") {
-      return new Response("Method Not Allowed", {
-        status: 405,
-        headers: corsHeaders()
-      });
-    }
+  const allowOrigin = allowed.has(origin) ? origin : "https://mohammadaisolutions.com";
 
-    const FLOWISE_URL = process.env.FLOWISE_URL;
-    const FLOWISE_API_KEY = process.env.FLOWISE_API_KEY;
-
-    const {
-      EMAIL_HOST,
-      EMAIL_PORT,
-      EMAIL_USER,
-      EMAIL_PASS,
-      EMAIL_TO
-    } = process.env;
-
-    if (!FLOWISE_URL || !FLOWISE_API_KEY) {
-      return json({ error: "Missing Flowise env vars" }, 500);
-    }
-
-    const body = await req.json();
-    const { chatflowId, question } = body;
-
-    const target = `${FLOWISE_URL.replace(/\/$/, "")}/api/v1/prediction/${chatflowId}`;
-
-    const upstream = await fetch(target, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${FLOWISE_API_KEY}`
-      },
-      body: JSON.stringify({ question })
-    });
-
-    const text = await upstream.text();
-
-    // 🔍 Extract LEAD_JSON safely
-    try {
-      const match = text.match(/<LEAD_JSON>([\s\S]*?)<\/LEAD_JSON>/);
-
-      if (match) {
-        const lead = JSON.parse(match[1]);
-
-        if (lead.leadCaptured === true) {
-          await sendLeadEmail({
-            EMAIL_HOST,
-            EMAIL_PORT,
-            EMAIL_USER,
-            EMAIL_PASS,
-            EMAIL_TO,
-            lead
-          });
-        }
-      }
-    } catch (emailErr) {
-      console.log("Lead email error (non-blocking):", emailErr);
-    }
-
-    // 🔁 Always return Flowise response unchanged
-    return new Response(text, {
-      status: upstream.status,
-      headers: {
-        ...corsHeaders(),
-        "Content-Type": "application/json"
-      }
-    });
-
-  } catch (err) {
-    console.log("Function error:", err);
-    return json({ error: "Internal error" }, 500);
-  }
-};
-
-async function sendLeadEmail({
-  EMAIL_HOST,
-  EMAIL_PORT,
-  EMAIL_USER,
-  EMAIL_PASS,
-  EMAIL_TO,
-  lead
-}) {
-  const transporter = nodemailer.createTransport({
-    host: EMAIL_HOST,
-    port: Number(EMAIL_PORT),
-    secure: Number(EMAIL_PORT) === 465,
-    auth: {
-      user: EMAIL_USER,
-      pass: EMAIL_PASS
-    }
-  });
-
-  const subject = `🔥 New Lead — ${lead.businessName || "Unknown Business"}`;
-
-  const body = `
-New lead captured from Mohammad AI Solutions
-
-Name: ${lead.fullName}
-Business: ${lead.businessName}
-Industry: ${lead.industry}
-Preferred Contact: ${lead.preferredContact}
-Email: ${lead.email || "N/A"}
-Phone: ${lead.phone || "N/A"}
-Has Website: ${lead.hasWebsite}
-Volume: ${lead.monthlyVisitorsOrLeads}
-Service Interest: ${lead.serviceInterest}
-
-Summary:
-${lead.summary || "—"}
-`;
-
-  await transporter.sendMail({
-    from: EMAIL_USER,
-    to: EMAIL_TO,
-    subject,
-    text: body
-  });
-}
-
-function corsHeaders() {
   return {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "POST, OPTIONS"
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Credentials": "true",
   };
 }
 
-function json(obj, status = 200) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { ...corsHeaders(), "Content-Type": "application/json" }
-  });
-}
+exports.handler = async (event) => {
+  const origin = event.headers.origin || "";
 
+  // Preflight
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 200, headers: corsHeaders(origin), body: "" };
+  }
 
+  try {
+    // Netlify redirect sends /api/v1/* -> /.netlify/functions/flowise-proxy/:splat
+    // event.path will look like: "/.netlify/functions/flowise-proxy/public-chatbotConfig/<id>"
+    const fnPrefix = "/.netlify/functions/flowise-proxy";
+    const splat = event.path.startsWith(fnPrefix) ? event.path.slice(fnPrefix.length) : event.path;
+
+    // splat is like "/public-chatbotConfig/<id>" or "/chatflows-streaming/<id>"
+    const targetUrl = `${FLOWISE_HOST}/api/v1${splat}`;
+
+    const upstream = await fetch(targetUrl, {
+      method: event.httpMethod,               // IMPORTANT: forwards GET/POST/etc
+      headers: {
+        "Content-Type": event.headers["content-type"] || "application/json",
+        // If Flowise needs auth, add it here:
+        // "Authorization": `Bearer ${process.env.FLOWISE_TOKEN}`,
+      },
+      body: ["GET", "HEAD"].includes(event.httpMethod) ? undefined : event.body,
+    });
+
+    const contentType = upstream.headers.get("content-type") || "application/json";
+    const text = await upstream.text();
+
+    return {
+      statusCode: upstream.status,
+      headers: {
+        ...corsHeaders(origin),
+        "Content-Type": contentType,
+      },
+      body: text,
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: corsHeaders(origin),
+      body: JSON.stringify({ error: "Proxy error", details: String(err) }),
+    };
+  }
+};
