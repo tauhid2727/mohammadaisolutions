@@ -34,15 +34,16 @@ exports.handler = async (event) => {
     // splat is like "/public-chatbotConfig/<id>" or "/chatflows-streaming/<id>"
     const targetUrl = `${FLOWISE_HOST}/api/v1${splat}`;
 
-    const upstream = await fetch(targetUrl, {
-      method: event.httpMethod,               // IMPORTANT: forwards GET/POST/etc
-      headers: {
-        "Content-Type": event.headers["content-type"] || "application/json",
-        // If Flowise needs auth, add it here:
-        // "Authorization": `Bearer ${process.env.FLOWISE_TOKEN}`,
-      },
-      body: ["GET", "HEAD"].includes(event.httpMethod) ? undefined : event.body,
-    });
+  const upstream = await fetch(targetUrl, {
+  method: event.httpMethod,
+  headers: {
+    ...event.headers,          // forward everything
+    host: undefined,           // remove host header
+  },
+  body: ["GET", "HEAD"].includes(event.httpMethod)
+    ? undefined
+    : event.body,
+});
 
     const contentType = upstream.headers.get("content-type") || "application/json";
     const text = await upstream.text();
