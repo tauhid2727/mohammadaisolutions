@@ -1,13 +1,17 @@
 // netlify/functions/send-lead-email.js
 
 const corsHeaders = (origin = "") => {
-  const allowed = new Set([
-    "https://mohammadaisolutions.com",
-    "https://chat.mohammadaisolutions.com",
-  ]);
+  const isNetlifyPreview = origin.endsWith(".netlify.app");
+
+  const allowed =
+    origin === "https://mohammadaisolutions.com" ||
+    origin === "https://chat.mohammadaisolutions.com" ||
+    isNetlifyPreview;
 
   return {
-    "Access-Control-Allow-Origin": allowed.has(origin) ? origin : "https://mohammadaisolutions.com",
+    "Access-Control-Allow-Origin": allowed
+      ? origin
+      : "https://mohammadaisolutions.com",
     "Access-Control-Allow-Headers": "Content-Type, x-lead-token",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Max-Age": "86400",
