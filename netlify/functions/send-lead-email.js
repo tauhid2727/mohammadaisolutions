@@ -1,46 +1,56 @@
-const { Resend } = require("resend");
+// netlify/functions/send-lead-email.js
 
-// ✅ CORS (must include x-lead-token)
-const corsHeaders = () => ({
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, x-lead-token",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-});
+const corsHeaders = (origin = "") => {
+  const allowed = new Set([
+    "https://mohammadaisolutions.com",
+    "https://chat.mohammadaisolutions.com",
+  ]);
 
-// ✅ small helper to avoid HTML breaking
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+  return {
+    "Access-Control-Allow-Origin": allowed.has(origin) ? origin : "https://mohammadaisolutions.com",
+    "Access-Control-Allow-Headers": "Content-Type, x-lead-token",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Max-Age": "86400",
+    "Content-Type": "application/json",
+  };
+};
 
 exports.handler = async (event) => {
+  const origin = event.headers?.origin || event.headers?.Origin || "";
+
   try {
-    // CORS preflight
+    // Handle preflight
     if (event.httpMethod === "OPTIONS") {
-      return { statusCode: 200, headers: corsHeaders(), body: "" };
+      return { statusCode: 200, headers: corsHeaders(origin), body: "" };
     }
 
-    // Allow POST only
+    // Only POST
     if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
-        headers: corsHeaders(),
+        headers: corsHeaders(origin),
         body: JSON.stringify({ ok: false, error: "Method Not Allowed" }),
       };
     }
 
-    // ✅ TOKEN CHECK
-    const token =
-      event.headers?.["x-lead-token"] || event.headers?.["x-lead-token".toLowerCase()];
+    // Token check
+    const expectedToken = process.env.LEAD_TOKEN;
+    const gotToken = event.headers["x-lead-token"] || event.headers["X-Lead-Token"];
 
-    if (!process.env.LEAD_TOKEN || token !== process.env.LEAD_TOKEN) {
+    if (!expectedToken) {
+      console.log("❌ Missing env LEAD_TOKEN");
+      return {
+        statusCode: 500,
+        headers: corsHeaders(origin),
+        body: JSON.stringify({ ok: false, error: "Server misconfigured (LEAD_TOKEN missing)" }),
+      };
+    }
+
+    if (!gotToken || gotToken !== expectedToken) {
+      console.log("❌ Unauthorized token. got:", gotToken ? "(present)" : "(missing)");
       return {
         statusCode: 401,
-        headers: corsHeaders(),
+        headers: corsHeaders(origin),
         body: JSON.stringify({ ok: false, error: "Unauthorized" }),
       };
     }
@@ -48,61 +58,110 @@ exports.handler = async (event) => {
     // Parse body
     const data = JSON.parse(event.body || "{}");
 
-    // Env vars
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const EMAIL_TO = process.env.EMAIL_TO;
-    const EMAIL_FROM = process.env.EMAIL_FROM;
-    const EMAIL_CC = process.env.EMAIL_CC;
+    const {
+      fullName = "",
+      email = "",
+      preferredContact = "",
+      phoneOrWhatsapp = "",
+      businessName = "",
+      goal = "",
+      painPoint = "",
+      tools = "",
+      monthlyVolume = "",
+      sourceUrl = "",
+    } = data;
 
-    if (!RESEND_API_KEY || !EMAIL_TO || !EMAIL_FROM) {
+    console.log("✅ Lead received:", {
+      fullName,
+      email: email ? "(present)" : "(missing)",
+      preferredContact,
+      phoneOrWhatsapp: phoneOrWhatsapp ? "(present)" : "(missing)",
+      businessName,
+      sourceUrl,
+    });
+
+    // Resend env
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    const EMAIL_FROM = process.env.EMAIL_FROM; // must be verified in Resend
+    const EMAIL_TO = process.env.EMAIL_TO;     // your inbox
+
+    if (!RESEND_API_KEY || !EMAIL_FROM || !EMAIL_TO) {
+      console.log("❌ Missing env:", {
+        RESEND_API_KEY: !!RESEND_API_KEY,
+        EMAIL_FROM: !!EMAIL_FROM,
+        EMAIL_TO: !!EMAIL_TO,
+      });
+
       return {
         statusCode: 500,
-        headers: corsHeaders(),
+        headers: corsHeaders(origin),
+        body: JSON.stringify({ ok: false, error: "Server misconfigured (missing email env vars)" }),
+      };
+    }
+
+    const subject = `New Lead — ${businessName || fullName || "Website"}`;
+
+    const text = `
+New Lead
+
+Name: ${fullName}
+Email: ${email}
+Preferred contact: ${preferredContact}
+Phone/WhatsApp: ${phoneOrWhatsapp}
+
+Business: ${businessName}
+Goal: ${goal}
+Pain point: ${painPoint}
+Tools: ${tools}
+Monthly volume: ${monthlyVolume}
+
+Source: ${sourceUrl}
+    `.trim();
+
+    console.log("📨 Sending via Resend…");
+
+    const resp = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: [EMAIL_TO],
+        subject,
+        text,
+      }),
+    });
+
+    const respBody = await resp.json().catch(() => ({}));
+
+    console.log("📩 Resend response:", resp.status, respBody);
+
+    if (!resp.ok) {
+      return {
+        statusCode: 502,
+        headers: corsHeaders(origin),
         body: JSON.stringify({
           ok: false,
-          error: "Missing env vars (RESEND_API_KEY / EMAIL_TO / EMAIL_FROM)",
+          error: "Resend failed",
+          status: resp.status,
+          details: respBody,
         }),
       };
     }
 
-    const resend = new Resend(RESEND_API_KEY);
-
-    const result = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: [EMAIL_TO],
-      ...(EMAIL_CC ? { cc: [EMAIL_CC] } : {}),
-      subject: `🔥 New Lead — ${data.fullName || "Website"}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.4;">
-          <h2 style="margin:0 0 12px;">New Lead</h2>
-          <p style="margin:0 0 12px;">
-            <b>Name:</b> ${escapeHtml(data.fullName || "")}<br/>
-            <b>Business:</b> ${escapeHtml(data.businessName || "")}<br/>
-            <b>Preferred Contact:</b> ${escapeHtml(data.preferredContact || "")}<br/>
-            <b>Email:</b> ${escapeHtml(data.email || "")}<br/>
-            <b>Phone:</b> ${escapeHtml(data.phone || "")}<br/>
-            <b>Has Website:</b> ${escapeHtml(data.hasWebsite || "")}<br/>
-            <b>Service Interest:</b> ${escapeHtml(data.serviceInterest || "")}
-          </p>
-
-          <h3 style="margin:18px 0 8px;">Full Payload</h3>
-          <pre style="font-size:13px; background:#f6f6f6; padding:12px; border-radius:8px; white-space:pre-wrap;">${escapeHtml(
-            JSON.stringify(data, null, 2)
-          )}</pre>
-        </div>
-      `,
-    });
-
     return {
       statusCode: 200,
-      headers: corsHeaders(),
-      body: JSON.stringify({ ok: true, id: result?.id || null }),
+      headers: corsHeaders(origin),
+      body: JSON.stringify({ ok: true, id: respBody.id || null }),
     };
   } catch (err) {
+    console.log("🔥 Function error:", err?.message || err);
     return {
       statusCode: 500,
-      headers: corsHeaders(),
-      body: JSON.stringify({ ok: false, error: err.message || String(err) }),
+      headers: corsHeaders(origin),
+      body: JSON.stringify({ ok: false, error: err?.message || "Server error" }),
     };
   }
 };
