@@ -1,10 +1,17 @@
 // netlify/functions/send-lead-email.js
+// Bulletproof version:
+// ✅ CORS (prod + chat subdomain + any .netlify.app preview)
+// ✅ OPTIONS preflight
+// ✅ Token check is CASE-INSENSITIVE
+// ✅ Accepts MANY possible field names from Flowise/custom tools
+// ✅ Sends email via Resend and returns real id
+// ✅ Logs useful debug info in Netlify function logs
 
 const corsHeaders = (origin = "") => {
   const allowed =
     origin === "https://mohammadaisolutions.com" ||
     origin === "https://chat.mohammadaisolutions.com" ||
-    origin.endsWith(".netlify.app");
+    origin.endsWith(".netlify.app"); // keep because you chose Option B
 
   return {
     "Access-Control-Allow-Origin": allowed ? origin : "https://mohammadaisolutions.com",
@@ -19,12 +26,12 @@ exports.handler = async (event) => {
   const origin = event.headers?.origin || event.headers?.Origin || "";
 
   try {
-    // Handle preflight
+    // 1) Handle preflight
     if (event.httpMethod === "OPTIONS") {
       return { statusCode: 200, headers: corsHeaders(origin), body: "" };
     }
 
-    // Only POST
+    // 2) Only POST
     if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
@@ -33,9 +40,14 @@ exports.handler = async (event) => {
       };
     }
 
-    // Token check
+    // 3) Normalize headers to lowercase (CASE-INSENSITIVE)
+    const headersLower = Object.fromEntries(
+      Object.entries(event.headers || {}).map(([k, v]) => [String(k).toLowerCase(), v])
+    );
+
+    // 4) Token check (case-insensitive header name)
     const expectedToken = process.env.LEAD_TOKEN;
-    const gotToken = event.headers["x-lead-token"] || event.headers["X-Lead-Token"];
+    const gotToken = headersLower["x-lead-token"];
 
     if (!expectedToken) {
       console.log("❌ Missing env LEAD_TOKEN");
@@ -47,7 +59,7 @@ exports.handler = async (event) => {
     }
 
     if (!gotToken || gotToken !== expectedToken) {
-      console.log("❌ Unauthorized token. got:", gotToken ? "(present)" : "(missing)");
+      console.log("❌ Unauthorized: token missing or mismatch");
       return {
         statusCode: 401,
         headers: corsHeaders(origin),
@@ -55,35 +67,37 @@ exports.handler = async (event) => {
       };
     }
 
-    // Parse body
+    // 5) Parse JSON body
     const data = JSON.parse(event.body || "{}");
 
-// accept multiple possible names from Flowise / tools
-const fullName =
-  data.fullName || data.name || data.customerName || "";
+    // 6) Bulletproof field mapping (accept many key names)
+    const fullName =
+      data.fullName || data.name || data.customerName || data.full_name || "";
 
-const email =
-  data.email || data.emailAddress || "";
+    const email =
+      data.email || data.emailAddress || data.email_address || "";
 
-const preferredContact =
-  data.preferredContact || data.contactMethod || "";
+    const preferredContact =
+      data.preferredContact || data.contactMethod || data.preferred_contact || "";
 
-const phoneOrWhatsapp =
-  data.phoneOrWhatsapp ||
-  data.phone ||
-  data.phoneNumber ||
-  data.whatsapp ||
-  data.whatsappNumber ||
-  "";
+    const phoneOrWhatsapp =
+      data.phoneOrWhatsapp ||
+      data.phone ||
+      data.phoneNumber ||
+      data.phone_number ||
+      data.whatsapp ||
+      data.whatsappNumber ||
+      data.whatsapp_number ||
+      "";
 
-const businessName =
-  data.businessName || data.company || data.companyName || "";
+    const businessName =
+      data.businessName || data.company || data.companyName || data.business || data.clinicName || "";
 
-const goal = data.goal || "";
-const painPoint = data.painPoint || "";
-const tools = data.tools || "";
-const monthlyVolume = data.monthlyVolume || data.monthlyInquiries || "";
-const sourceUrl = data.sourceUrl || data.pageUrl || "";
+    const goal = data.goal || "";
+    const painPoint = data.painPoint || data.pain_point || "";
+    const tools = data.tools || "";
+    const monthlyVolume = data.monthlyVolume || data.monthlyInquiries || data.monthly || "";
+    const sourceUrl = data.sourceUrl || data.pageUrl || data.sourceURL || "";
 
     console.log("✅ Lead received:", {
       fullName,
@@ -91,10 +105,11 @@ const sourceUrl = data.sourceUrl || data.pageUrl || "";
       preferredContact,
       phoneOrWhatsapp: phoneOrWhatsapp ? "(present)" : "(missing)",
       businessName,
+      goal,
       sourceUrl,
     });
 
-    // Resend env
+    // 7) Required env vars for Resend
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     const EMAIL_FROM = process.env.EMAIL_FROM; // must be verified in Resend
     const EMAIL_TO = process.env.EMAIL_TO;     // your inbox
@@ -113,6 +128,7 @@ const sourceUrl = data.sourceUrl || data.pageUrl || "";
       };
     }
 
+    // 8) Build email
     const subject = `New Lead — ${businessName || fullName || "Website"}`;
 
     const text = `
@@ -130,10 +146,11 @@ Tools: ${tools}
 Monthly volume: ${monthlyVolume}
 
 Source: ${sourceUrl}
-    `.trim();
+`.trim();
 
     console.log("📨 Sending via Resend…");
 
+    // 9) Send via Resend REST API
     const resp = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -165,6 +182,7 @@ Source: ${sourceUrl}
       };
     }
 
+    // 10) Success
     return {
       statusCode: 200,
       headers: corsHeaders(origin),
