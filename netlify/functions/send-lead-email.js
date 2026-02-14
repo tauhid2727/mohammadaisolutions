@@ -58,18 +58,32 @@ exports.handler = async (event) => {
     // Parse body
     const data = JSON.parse(event.body || "{}");
 
-    const {
-      fullName = "",
-      email = "",
-      preferredContact = "",
-      phoneOrWhatsapp = "",
-      businessName = "",
-      goal = "",
-      painPoint = "",
-      tools = "",
-      monthlyVolume = "",
-      sourceUrl = "",
-    } = data;
+// accept multiple possible names from Flowise / tools
+const fullName =
+  data.fullName || data.name || data.customerName || "";
+
+const email =
+  data.email || data.emailAddress || "";
+
+const preferredContact =
+  data.preferredContact || data.contactMethod || "";
+
+const phoneOrWhatsapp =
+  data.phoneOrWhatsapp ||
+  data.phone ||
+  data.phoneNumber ||
+  data.whatsapp ||
+  data.whatsappNumber ||
+  "";
+
+const businessName =
+  data.businessName || data.company || data.companyName || "";
+
+const goal = data.goal || "";
+const painPoint = data.painPoint || "";
+const tools = data.tools || "";
+const monthlyVolume = data.monthlyVolume || data.monthlyInquiries || "";
+const sourceUrl = data.sourceUrl || data.pageUrl || "";
 
     console.log("✅ Lead received:", {
       fullName,
