@@ -41,7 +41,6 @@ exports.handler = async (event) => {
     }
 
    // 3) Token check via query parameter (?token=...)
-
 const expectedToken = process.env.LEAD_TOKEN;
 const gotToken = event.queryStringParameters?.token;
 
@@ -63,13 +62,11 @@ if (!gotToken || gotToken !== expectedToken) {
   };
 }
 
-// 4) Parse JSON body
+// 4) Parse JSON body (ONLY ONCE)
 const data = JSON.parse(event.body || "{}");
 
-    // 5) Parse JSON body
-    const data = JSON.parse(event.body || "{}");
 
-    // 6) Bulletproof field mapping (accept many key names)
+    // 5) Bulletproof field mapping (accept many key names)
     const fullName =
       data.fullName || data.name || data.customerName || data.full_name || "";
 
@@ -108,7 +105,7 @@ const data = JSON.parse(event.body || "{}");
       sourceUrl,
     });
 
-    // 7) Required env vars for Resend
+    // 6) Required env vars for Resend
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     const EMAIL_FROM = process.env.EMAIL_FROM; // must be verified in Resend
     const EMAIL_TO = process.env.EMAIL_TO;     // your inbox
@@ -127,7 +124,7 @@ const data = JSON.parse(event.body || "{}");
       };
     }
 
-    // 8) Build email
+    // 7) Build email
     const subject = `New Lead — ${businessName || fullName || "Website"}`;
 
     const text = `
@@ -149,7 +146,7 @@ Source: ${sourceUrl}
 
     console.log("📨 Sending via Resend…");
 
-    // 9) Send via Resend REST API
+    // 8) Send via Resend REST API
     const resp = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -181,7 +178,7 @@ Source: ${sourceUrl}
       };
     }
 
-    // 10) Success
+    // 9) Success
     return {
       statusCode: 200,
       headers: corsHeaders(origin),
