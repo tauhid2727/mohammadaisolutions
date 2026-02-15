@@ -47,7 +47,9 @@ exports.handler = async (event) => {
 
     // 4) Token check (case-insensitive header name)
     const expectedToken = process.env.LEAD_TOKEN;
-    const gotToken = headersLower["x-lead-token"];
+   const tokenFromHeader = headersLower["x-lead-token"];
+const tokenFromQuery = event.queryStringParameters?.token;
+const gotToken = tokenFromHeader || tokenFromQuery;
 
     if (!expectedToken) {
       console.log("❌ Missing env LEAD_TOKEN");
