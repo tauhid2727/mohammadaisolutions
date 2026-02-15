@@ -11,7 +11,7 @@ const corsHeaders = (origin = "") => {
   const allowed =
     origin === "https://mohammadaisolutions.com" ||
     origin === "https://chat.mohammadaisolutions.com" ||
-    origin.endsWith(".netlify.app"); // keep because you chose Option B
+    (origin || "").endsWith(".netlify.app"); // keep because you chose Option B
 
   return {
     "Access-Control-Allow-Origin": allowed ? origin : "https://mohammadaisolutions.com",
