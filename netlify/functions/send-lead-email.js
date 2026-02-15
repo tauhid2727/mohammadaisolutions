@@ -41,9 +41,17 @@ exports.handler = async (event) => {
     }
 
    // 3) Token check via query parameter (?token=...)
+
 const expectedToken = process.env.LEAD_TOKEN;
 const gotToken = event.queryStringParameters?.token;
 
+// 🔎 DEBUG BLOCK (temporary)
+console.log("TOKEN DEBUG:", {
+  gotToken: gotToken ? `${gotToken.slice(0,4)}...len=${gotToken.length}` : null,
+  expectedToken: expectedToken ? `${expectedToken.slice(0,4)}...len=${expectedToken.length}` : null
+});
+
+// continue normally
 if (!expectedToken) {
   console.log("❌ Missing env LEAD_TOKEN");
   return {
