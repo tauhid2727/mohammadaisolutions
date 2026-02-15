@@ -42,22 +42,33 @@ exports.handler = async (event) => {
 
    // 3) Token check via query parameter (?token=...)
 
-const expectedToken = process.env.LEAD_TOKEN;
-const gotToken = event.queryStringParameters?.token;
+const expectedToken = (process.env.LEAD_TOKEN || "").trim();
 
-// 🔎 DEBUG BLOCK (temporary)
+// token can come from query OR header
+const gotToken =
+  (event.queryStringParameters?.token || "").trim() ||
+  String(event.headers?.["x-lead-token"] || event.headers?.["X-Lead-Token"] || "").trim();
+
 console.log("TOKEN DEBUG:", {
-  gotToken: gotToken ? `${gotToken.slice(0,4)}...len=${gotToken.length}` : null,
-  expectedToken: expectedToken ? `${expectedToken.slice(0,4)}...len=${expectedToken.length}` : null
+  gotToken: gotToken ? `${gotToken.slice(0, 4)}...len=${gotToken.length}` : null,
+  expectedToken: expectedToken ? `${expectedToken.slice(0, 4)}...len=${expectedToken.length}` : null
 });
 
-// continue normally
 if (!expectedToken) {
   console.log("❌ Missing env LEAD_TOKEN");
   return {
     statusCode: 500,
     headers: corsHeaders(origin),
     body: JSON.stringify({ ok: false, error: "Server misconfigured (LEAD_TOKEN missing)" }),
+  };
+}
+
+if (!gotToken || gotToken !== expectedToken) {
+  console.log("❌ Unauthorized: token missing or mismatch");
+  return {
+    statusCode: 401,
+    headers: corsHeaders(origin),
+    body: JSON.stringify({ ok: false, error: "Unauthorized (bad token)" }),
   };
 }
 
