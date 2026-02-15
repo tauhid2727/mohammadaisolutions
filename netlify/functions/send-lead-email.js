@@ -40,34 +40,31 @@ exports.handler = async (event) => {
       };
     }
 
-    // 3) Normalize headers to lowercase (CASE-INSENSITIVE)
-    const headersLower = Object.fromEntries(
-      Object.entries(event.headers || {}).map(([k, v]) => [String(k).toLowerCase(), v])
-    );
+   // 3) Token check via query parameter (?token=...)
 
-    // 4) Token check (case-insensitive header name)
-    const expectedToken = process.env.LEAD_TOKEN;
-   const tokenFromHeader = headersLower["x-lead-token"];
-const tokenFromQuery = event.queryStringParameters?.token;
-const gotToken = tokenFromHeader || tokenFromQuery;
+const expectedToken = process.env.LEAD_TOKEN;
+const gotToken = event.queryStringParameters?.token;
 
-    if (!expectedToken) {
-      console.log("❌ Missing env LEAD_TOKEN");
-      return {
-        statusCode: 500,
-        headers: corsHeaders(origin),
-        body: JSON.stringify({ ok: false, error: "Server misconfigured (LEAD_TOKEN missing)" }),
-      };
-    }
+if (!expectedToken) {
+  console.log("❌ Missing env LEAD_TOKEN");
+  return {
+    statusCode: 500,
+    headers: corsHeaders(origin),
+    body: JSON.stringify({ ok: false, error: "Server misconfigured (LEAD_TOKEN missing)" }),
+  };
+}
 
-    if (!gotToken || gotToken !== expectedToken) {
-      console.log("❌ Unauthorized: token missing or mismatch");
-      return {
-        statusCode: 401,
-        headers: corsHeaders(origin),
-        body: JSON.stringify({ ok: false, error: "Unauthorized" }),
-      };
-    }
+if (!gotToken || gotToken !== expectedToken) {
+  console.log("❌ Unauthorized: token missing or mismatch");
+  return {
+    statusCode: 401,
+    headers: corsHeaders(origin),
+    body: JSON.stringify({ ok: false, error: "Unauthorized (bad token)" }),
+  };
+}
+
+// 4) Parse JSON body
+const data = JSON.parse(event.body || "{}");
 
     // 5) Parse JSON body
     const data = JSON.parse(event.body || "{}");
