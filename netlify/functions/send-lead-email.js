@@ -72,15 +72,6 @@ if (!gotToken || gotToken !== expectedToken) {
   };
 }
 
-if (!gotToken || gotToken !== expectedToken) {
-  console.log("❌ Unauthorized: token missing or mismatch");
-  return {
-    statusCode: 401,
-    headers: corsHeaders(origin),
-    body: JSON.stringify({ ok: false, error: "Unauthorized (bad token)" }),
-  };
-}
-
 // 4) Parse JSON body (ONLY ONCE)
 const data = JSON.parse(event.body || "{}");
 
