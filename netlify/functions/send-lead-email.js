@@ -2,98 +2,134 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// ---- Helpers ----
-function corsHeaders(origin = "*") {
+// -------------------- helpers --------------------
+function corsHeaders(origin) {
+  const allowOrigin = origin || process.env.ALLOW_ORIGIN || "*";
   return {
-    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Headers": "Content-Type, x-lead-token",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
 }
 
-function asCleanString(v) {
+function clean(v) {
   if (v === null || v === undefined) return "";
   return String(v).trim();
 }
 
-function pickFirst(obj, keys) {
-  for (const k of keys) {
-    if (obj && Object.prototype.hasOwnProperty.call(obj, k)) {
-      const val = asCleanString(obj[k]);
-      if (val) return val;
-    }
+// case-insensitive header getter (Netlify headers sometimes vary)
+function getHeader(headers, key) {
+  if (!headers) return "";
+  const target = key.toLowerCase();
+  for (const k of Object.keys(headers)) {
+    if (k.toLowerCase() === target) return headers[k];
   }
   return "";
 }
 
+function pickFirst(obj, keys) {
+  if (!obj || typeof obj !== "object") return "";
+  for (const k of keys) {
+    // direct match
+    if (Object.prototype.hasOwnProperty.call(obj, k)) {
+      const val = clean(obj[k]);
+      if (val) return val;
+    }
+  }
+
+  // also try case-insensitive match
+  const lowerMap = {};
+  for (const [k, v] of Object.entries(obj)) {
+    lowerMap[k.toLowerCase()] = v;
+  }
+  for (const k of keys) {
+    const v = lowerMap[k.toLowerCase()];
+    const val = clean(v);
+    if (val) return val;
+  }
+
+  return "";
+}
+
 function normalizeLeadPayload(raw) {
-  // Accept many variants that tools/LLMs might produce
-  const fullName = pickFirst(raw, [
+  // Some tools wrap the payload inside { input: {...} } or { data: {...} }
+  const root =
+    (raw && raw.input && typeof raw.input === "object" && raw.input) ||
+    (raw && raw.data && typeof raw.data === "object" && raw.data) ||
+    raw ||
+    {};
+
+  const fullName = pickFirst(root, [
     "fullName",
     "FullName",
     "name",
     "Name",
     "fullname",
     "customerName",
+    "customer_name",
+    "full_name",
   ]);
 
-  const businessName = pickFirst(raw, [
+  const businessName = pickFirst(root, [
     "businessName",
     "BusinessName",
+    "business",
     "company",
     "companyName",
     "CompanyName",
-    "business",
+    "company_name",
+    "business_name",
   ]);
 
-  const preferredContact = pickFirst(raw, [
+  const preferredContact = pickFirst(root, [
     "preferredContact",
     "PreferredContact",
     "contactMethod",
+    "contact_method",
     "preferred_contact",
+    "preferred",
   ]).toLowerCase();
 
-  // IMPORTANT: handle both spellings (Whatsapp vs WhatsApp)
-  const phoneOrWhatsapp = pickFirst(raw, [
+  // ✅ Accept BOTH spellings + lots of variants
+  const phoneOrWhatsapp = pickFirst(root, [
     "phoneOrWhatsapp",
     "phoneOrWhatsApp",
     "PhoneOrWhatsapp",
     "PhoneOrWhatsApp",
     "phone",
     "Phone",
+    "phoneNumber",
+    "phone_number",
+    "mobile",
+    "Mobile",
     "whatsapp",
     "WhatsApp",
-    "phoneNumber",
-    "mobile",
+    "whatsApp",
     "contactNumber",
+    "contact_number",
   ]);
 
-  const email = pickFirst(raw, [
+  const email = pickFirst(root, [
     "email",
     "Email",
     "emailAddress",
     "EmailAddress",
+    "email_address",
   ]);
 
-  return {
-    fullName,
-    businessName,
-    preferredContact,
-    phoneOrWhatsapp,
-    email,
-  };
+  return { fullName, businessName, preferredContact, phoneOrWhatsapp, email, receivedKeys: Object.keys(root) };
 }
 
-function missingRequiredFields(normalized) {
+function missingRequiredFields(n) {
   const missing = [];
-  if (!normalized.fullName) missing.push("fullName");
-  if (!normalized.businessName) missing.push("businessName");
-  if (!normalized.preferredContact) missing.push("preferredContact");
-  if (!normalized.phoneOrWhatsapp) missing.push("phoneOrWhatsapp");
+  if (!n.fullName) missing.push("fullName");
+  if (!n.businessName) missing.push("businessName");
+  if (!n.preferredContact) missing.push("preferredContact");
+  if (!n.phoneOrWhatsapp) missing.push("phoneOrWhatsapp");
   return missing;
 }
 
-// ---- Netlify Function ----
+// -------------------- function --------------------
 export const handler = async (event) => {
   // CORS preflight
   if (event.httpMethod === "OPTIONS") {
@@ -109,10 +145,9 @@ export const handler = async (event) => {
   }
 
   try {
-    // (Recommended) token check
-    const incomingToken =
-      event.headers?.["x-lead-token"] || event.headers?.["X-Lead-Token"];
-    const expectedToken = process.env.LEAD_TOKEN; // set in Netlify env vars
+    // ---- token check ----
+    const incomingToken = clean(getHeader(event.headers, "x-lead-token"));
+    const expectedToken = clean(process.env.LEAD_TOKEN);
 
     if (expectedToken && incomingToken !== expectedToken) {
       return {
@@ -122,8 +157,18 @@ export const handler = async (event) => {
       };
     }
 
-    // Safe parse
-    const raw = event.body ? JSON.parse(event.body) : {};
+    // ---- safe parse (your sanity check #1) ----
+    let raw = {};
+    try {
+      raw = event.body ? JSON.parse(event.body) : {};
+    } catch (e) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders(),
+        body: JSON.stringify({ ok: false, error: "Invalid JSON body" }),
+      };
+    }
+
     const normalized = normalizeLeadPayload(raw);
     const missing = missingRequiredFields(normalized);
 
@@ -135,19 +180,19 @@ export const handler = async (event) => {
           ok: false,
           error: "Missing required fields",
           missing,
-          receivedKeys: Object.keys(raw || {}),
+          receivedKeys: normalized.receivedKeys,
           normalized,
         }),
       };
     }
 
-    const FROM_EMAIL =
-      process.env.FROM_EMAIL || "Mohammad AI Solutions <hello@mohammadaisolutions.com>";
-    const TO_EMAIL = process.env.TO_EMAIL || "hello@mohammadaisolutions.com";
+    // ---- env vars (matches your Netlify UI names) ----
+    const FROM_EMAIL = clean(process.env.EMAIL_FROM) || "Mohammad AI Solutions <hello@mohammadaisolutions.com>";
+    const TO_EMAIL = clean(process.env.EMAIL_TO) || "hello@mohammadaisolutions.com";
 
     const result = await resend.emails.send({
       from: FROM_EMAIL,
-      to: [TO_EMAIL],
+      to: [TO_EMAIL], // ✅ sanity check #2 (array)
       subject: "🔥 New Website Lead",
       html: `
         <h2>New Lead Received</h2>
@@ -169,10 +214,7 @@ export const handler = async (event) => {
     return {
       statusCode: 500,
       headers: corsHeaders(),
-      body: JSON.stringify({
-        ok: false,
-        error: error?.message || "Server error",
-      }),
+      body: JSON.stringify({ ok: false, error: error?.message || "Server error" }),
     };
   }
 };
