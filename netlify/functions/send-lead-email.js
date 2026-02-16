@@ -1,3 +1,7 @@
+const token = event.headers["x-lead-token"] || event.headers["X-Lead-Token"];
+if (token !== process.env.LEAD_TOKEN) {
+  return { statusCode: 401, body: JSON.stringify({ ok:false, error:"Unauthorized" }) };
+}
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
