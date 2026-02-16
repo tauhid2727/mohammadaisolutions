@@ -1,205 +1,59 @@
-// netlify/functions/send-lead-email.js
-// Bulletproof version:
-// ✅ CORS (prod + chat subdomain + any .netlify.app preview)
-// ✅ OPTIONS preflight
-// ✅ Token check is CASE-INSENSITIVE
-// ✅ Accepts MANY possible field names from Flowise/custom tools
-// ✅ Sends email via Resend and returns real id
-// ✅ Logs useful debug info in Netlify function logs
+import { Resend } from "resend";
 
-const corsHeaders = (origin = "") => {
-  const allowed =
-    origin === "https://mohammadaisolutions.com" ||
-    origin === "https://chat.mohammadaisolutions.com" ||
-    (origin || "").endsWith(".netlify.app"); // keep because you chose Option B
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  return {
-    "Access-Control-Allow-Origin": allowed ? origin : "https://mohammadaisolutions.com",
-    "Access-Control-Allow-Headers": "Content-Type, x-lead-token, X-Lead-Token",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Max-Age": "86400",
-    "Content-Type": "application/json",
-  };
-};
-
-exports.handler = async (event) => {
-  const origin = event.headers?.origin || event.headers?.Origin || "";
-
+export const handler = async (event) => {
   try {
-    // 1) Handle preflight
-    if (event.httpMethod === "OPTIONS") {
-      return { statusCode: 200, headers: corsHeaders(origin), body: "" };
-    }
-
-    // 2) Only POST
     if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
-        headers: corsHeaders(origin),
-        body: JSON.stringify({ ok: false, error: "Method Not Allowed" }),
+        body: JSON.stringify({ ok: false, error: "Method not allowed" }),
       };
     }
 
-   // 3) Token check via query parameter (?token=...)
+    const data = JSON.parse(event.body);
 
-const expectedToken = (process.env.LEAD_TOKEN || "").trim();
-
-// token can come from query OR header
-const gotToken =
-  (event.queryStringParameters?.token || "").trim() ||
-  String(event.headers?.["x-lead-token"] || event.headers?.["X-Lead-Token"] || "").trim();
-
-console.log("TOKEN DEBUG:", {
-  gotToken: gotToken ? `${gotToken.slice(0, 4)}...len=${gotToken.length}` : null,
-  expectedToken: expectedToken ? `${expectedToken.slice(0, 4)}...len=${expectedToken.length}` : null
-});
-
-if (!expectedToken) {
-  console.log("❌ Missing env LEAD_TOKEN");
-  return {
-    statusCode: 500,
-    headers: corsHeaders(origin),
-    body: JSON.stringify({ ok: false, error: "Server misconfigured (LEAD_TOKEN missing)" }),
-  };
-}
-
-if (!gotToken || gotToken !== expectedToken) {
-  console.log("❌ Unauthorized: token missing or mismatch");
-  return {
-    statusCode: 401,
-    headers: corsHeaders(origin),
-    body: JSON.stringify({ ok: false, error: "Unauthorized (bad token)" }),
-  };
-}
-
-// 4) Parse JSON body (ONLY ONCE)
-const data = JSON.parse(event.body || "{}");
-
-
-    // 5) Bulletproof field mapping (accept many key names)
-    const fullName =
-      data.fullName || data.name || data.customerName || data.full_name || "";
-
-    const email =
-      data.email || data.emailAddress || data.email_address || "";
-
-    const preferredContact =
-      data.preferredContact || data.contactMethod || data.preferred_contact || "";
-
-    const phoneOrWhatsapp =
-      data.phoneOrWhatsapp ||
-      data.phone ||
-      data.phoneNumber ||
-      data.phone_number ||
-      data.whatsapp ||
-      data.whatsappNumber ||
-      data.whatsapp_number ||
-      "";
-
-    const businessName =
-      data.businessName || data.company || data.companyName || data.business || data.clinicName || "";
-
-    const goal = data.goal || "";
-    const painPoint = data.painPoint || data.pain_point || "";
-    const tools = data.tools || "";
-    const monthlyVolume = data.monthlyVolume || data.monthlyInquiries || data.monthly || "";
-    const sourceUrl = data.sourceUrl || data.pageUrl || data.sourceURL || "";
-
-    console.log("✅ Lead received:", {
+    const {
       fullName,
-      email: email ? "(present)" : "(missing)",
       preferredContact,
-      phoneOrWhatsapp: phoneOrWhatsapp ? "(present)" : "(missing)",
+      phoneOrWhatsapp,
+      email,
       businessName,
-      goal,
-      sourceUrl,
-    });
+    } = data;
 
-    // 6) Required env vars for Resend
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const EMAIL_FROM = process.env.EMAIL_FROM; // must be verified in Resend
-    const EMAIL_TO = process.env.EMAIL_TO;     // your inbox
-
-    if (!RESEND_API_KEY || !EMAIL_FROM || !EMAIL_TO) {
-      console.log("❌ Missing env:", {
-        RESEND_API_KEY: !!RESEND_API_KEY,
-        EMAIL_FROM: !!EMAIL_FROM,
-        EMAIL_TO: !!EMAIL_TO,
-      });
-
+    // Basic validation
+    if (!fullName || !preferredContact || !phoneOrWhatsapp || !businessName) {
       return {
-        statusCode: 500,
-        headers: corsHeaders(origin),
-        body: JSON.stringify({ ok: false, error: "Server misconfigured (missing email env vars)" }),
+        statusCode: 400,
+        body: JSON.stringify({ ok: false, error: "Missing required fields" }),
       };
     }
 
-    // 7) Build email
-    const subject = `New Lead — ${businessName || fullName || "Website"}`;
-
-    const text = `
-New Lead
-
-Name: ${fullName}
-Email: ${email}
-Preferred contact: ${preferredContact}
-Phone/WhatsApp: ${phoneOrWhatsapp}
-
-Business: ${businessName}
-Goal: ${goal}
-Pain point: ${painPoint}
-Tools: ${tools}
-Monthly volume: ${monthlyVolume}
-
-Source: ${sourceUrl}
-`.trim();
-
-    console.log("📨 Sending via Resend…");
-
-    // 8) Send via Resend REST API
-    const resp = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: [EMAIL_TO],
-        subject,
-        text,
-      }),
+    await resend.emails.send({
+      from: "Mohammad AI Solutions <hello@mohammadaisolutions.com>",
+      to: "hello@mohammadaisolutions.com",
+      subject: "🔥 New Website Lead",
+      html: `
+        <h2>New Lead Received</h2>
+        <p><strong>Name:</strong> ${fullName}</p>
+        <p><strong>Business:</strong> ${businessName}</p>
+        <p><strong>Preferred Contact:</strong> ${preferredContact}</p>
+        <p><strong>Phone/WhatsApp:</strong> ${phoneOrWhatsapp}</p>
+        <p><strong>Email:</strong> ${email || "Not provided"}</p>
+      `,
     });
 
-    const respBody = await resp.json().catch(() => ({}));
-
-    console.log("📩 Resend response:", resp.status, respBody);
-
-    if (!resp.ok) {
-      return {
-        statusCode: 502,
-        headers: corsHeaders(origin),
-        body: JSON.stringify({
-          ok: false,
-          error: "Resend failed",
-          status: resp.status,
-          details: respBody,
-        }),
-      };
-    }
-
-    // 9) Success
     return {
       statusCode: 200,
-      headers: corsHeaders(origin),
-      body: JSON.stringify({ ok: true, id: respBody.id || null }),
+      body: JSON.stringify({ ok: true }),
     };
-  } catch (err) {
-    console.log("🔥 Function error:", err?.message || err);
+  } catch (error) {
+    console.error("ERROR:", error);
+
     return {
       statusCode: 500,
-      headers: corsHeaders(origin),
-      body: JSON.stringify({ ok: false, error: err?.message || "Server error" }),
+      body: JSON.stringify({ ok: false, error: error.message }),
     };
   }
 };
+
