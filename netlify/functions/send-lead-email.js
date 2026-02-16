@@ -15,7 +15,7 @@ const corsHeaders = (origin = "") => {
 
   return {
     "Access-Control-Allow-Origin": allowed ? origin : "https://mohammadaisolutions.com",
-    "Access-Control-Allow-Headers": "Content-Type, x-lead-token",
+    "Access-Control-Allow-Headers": "Content-Type, x-lead-token, X-Lead-Token",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Max-Age": "86400",
     "Content-Type": "application/json",
