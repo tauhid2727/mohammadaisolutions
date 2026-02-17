@@ -17,25 +17,18 @@ exports.handler = async (event) => {
 
   // Preflight
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders(allowOrigin), body: "" };
+    return {
+      statusCode: 200,
+      headers: corsHeaders(allowOrigin),
+      body: "",
+    };
   }
 
-  // Only POST
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
       headers: corsHeaders(allowOrigin),
-      body: JSON.stringify({ success: false, message: "Method not allowed" }),
-    };
-  }
-
-  // ✅ Token check (recommended)
-  const token = event.headers?.["x-lead-token"] || event.headers?.["X-Lead-Token"];
-  if (process.env.LEAD_TOKEN && token !== process.env.LEAD_TOKEN) {
-    return {
-      statusCode: 401,
-      headers: corsHeaders(allowOrigin),
-      body: JSON.stringify({ success: false, message: "Unauthorized" }),
+      body: JSON.stringify({ ok: false, error: "Method not allowed" }),
     };
   }
 
@@ -49,23 +42,22 @@ exports.handler = async (event) => {
     const businessName = body.businessName || body.business || "";
     const email = body.email || "";
 
-    // Required fields
+    // Only required
     if (!fullName || !businessName) {
       return {
         statusCode: 400,
         headers: corsHeaders(allowOrigin),
         body: JSON.stringify({
-          success: false,
-          message: "Missing required fields",
+          ok: false,
+          error: "Missing required fields",
           required: ["fullName", "businessName"],
         }),
       };
     }
 
-    // Send via Resend
     const result = await resend.emails.send({
-      from: process.env.EMAIL_FROM, // e.g. "Mohammad AI Solutions <hello@mohammadaisolutions.com>"
-      to: process.env.EMAIL_TO,     // e.g. "tauhid27@gmail.com"
+      from: process.env.EMAIL_FROM,
+      to: process.env.EMAIL_TO,
       subject: `🔥 New Lead from ${businessName}`,
       html: `
         <h2>New Website Lead</h2>
@@ -81,6 +73,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: corsHeaders(allowOrigin),
       body: JSON.stringify({
+        ok: true,
         success: true,
         message: "Lead submitted successfully",
         result,
@@ -91,6 +84,7 @@ exports.handler = async (event) => {
       statusCode: 500,
       headers: corsHeaders(allowOrigin),
       body: JSON.stringify({
+        ok: false,
         success: false,
         message: error?.message || "Server error",
       }),
