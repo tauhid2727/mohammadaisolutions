@@ -69,25 +69,25 @@ exports.handler = async (event) => {
       `,
     });
 
-    return {
-      statusCode: 200,
-      headers: corsHeaders(allowOrigin),
-      body: JSON.stringify({
-        ok: true,
-        success: true,
-        message: "Lead submitted successfully",
-        result,
-      }),
-    };
+   return {
+  statusCode: 200,
+  headers: corsHeaders(allowOrigin),
+  body: JSON.stringify({
+    ok: true,
+    message: "Lead submitted successfully",
+    result
+  })
+};
+
   } catch (error) {
     return {
-      statusCode: 500,
-      headers: corsHeaders(allowOrigin),
-      body: JSON.stringify({
-        ok: false,
-        success: false,
-        message: error?.message || "Server error",
-      }),
-    };
+  statusCode: 500,
+  headers: corsHeaders(allowOrigin),
+  body: JSON.stringify({
+    ok: false,
+    error: error?.message || "Server error"
+  })
+};
+
   }
 };
