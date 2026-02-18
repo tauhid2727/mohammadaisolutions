@@ -11,6 +11,43 @@ const corsHeaders = (origin) => ({
   "Content-Type": "application/json",
 });
 
+// --- Slack helper ---
+async function sendSlackAlert(lead) {
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.log("Slack webhook not configured (SLACK_WEBHOOK_URL missing)");
+    return { ok: false, skipped: true };
+  }
+
+  const msg = {
+    text:
+`🚀 *NEW LEAD — Mohammad AI Solutions*
+*Name:* ${lead.fullName || "-"}
+*Business:* ${lead.businessName || "-"}
+*Preferred Contact:* ${lead.preferredContact || "-"}
+*Phone/WhatsApp:* ${lead.phoneOrWhatsApp || "-"}
+*Email:* ${lead.email || "-"}
+*Source:* ${lead.source || "Website"}`,
+  };
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(msg),
+    });
+
+    const status = res.status;
+    console.log("Slack status:", status);
+
+    // Slack returns "ok" body sometimes, but status 200 is what we care about
+    return { ok: status >= 200 && status < 300, status };
+  } catch (err) {
+    console.error("Slack error:", err?.message || String(err));
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
 exports.handler = async (event) => {
   const allowOrigin = event.headers?.origin || event.headers?.Origin || "*";
 
@@ -33,6 +70,33 @@ exports.handler = async (event) => {
   }
 
   try {
+    // (Recommended) Optional security check:
+    // If you set LEAD_TOKEN in Netlify, only requests with header x-lead-token matching it will be accepted.
+    const headerToken =
+      event.headers?.["x-lead-token"] ||
+      event.headers?.["X-Lead-Token"] ||
+      event.headers?.["X-LEAD-TOKEN"] ||
+      "";
+
+    const expectedToken = process.env.LEAD_TOKEN || "";
+    if (expectedToken && headerToken && headerToken !== expectedToken) {
+      return {
+        statusCode: 401,
+        headers: corsHeaders(allowOrigin),
+        body: JSON.stringify({ ok: false, error: "Unauthorized (bad token)" }),
+      };
+    }
+    // If you want to REQUIRE the token header (stronger), uncomment:
+    /*
+    if (expectedToken && !headerToken) {
+      return {
+        statusCode: 401,
+        headers: corsHeaders(allowOrigin),
+        body: JSON.stringify({ ok: false, error: "Unauthorized (missing token)" }),
+      };
+    }
+    */
+
     const body = JSON.parse(event.body || "{}");
 
     // Normalize keys (keep your current behavior)
@@ -42,8 +106,9 @@ exports.handler = async (event) => {
       body.phoneOrWhatsApp || body.phoneOrWhatsapp || body.phone || body.whatsapp || "";
     const businessName = body.businessName || body.business || "";
     const email = body.email || "";
+    const source = body.source || "MohammadAI Website";
 
-    // Minimal required fields (keep as you had)
+    // Minimal required fields
     if (!fullName || !businessName) {
       return {
         statusCode: 400,
@@ -57,7 +122,7 @@ exports.handler = async (event) => {
     }
 
     // 1) Send email via Resend
-    const result = await resend.emails.send({
+    const emailResult = await resend.emails.send({
       from: process.env.EMAIL_FROM,
       to: process.env.EMAIL_TO,
       subject: `🔥 New Lead from ${businessName}`,
@@ -68,29 +133,27 @@ exports.handler = async (event) => {
         <p><strong>Preferred Contact:</strong> ${preferredContact || "Not provided"}</p>
         <p><strong>Phone/WhatsApp:</strong> ${phoneOrWhatsApp || "Not provided"}</p>
         <p><strong>Email:</strong> ${email || "Not provided"}</p>
+        <p><strong>Source:</strong> ${source}</p>
       `,
     });
 
-    // 2) Log to Google Sheet (Apps Script Web App) — Clean + Safe + Good Logs
+    // 2) Log to Google Sheet (Apps Script Web App)
     let sheetsStatus = null;
     let sheetsBody = null;
 
     try {
-      if (!process.env.GSHEET_WEBAPP_URL) {
-        throw new Error("Missing env var GSHEET_WEBAPP_URL");
-      }
-      if (!process.env.LEAD_TOKEN) {
-        throw new Error("Missing env var LEAD_TOKEN");
-      }
+      if (!process.env.GSHEET_WEBAPP_URL) throw new Error("Missing env var GSHEET_WEBAPP_URL");
+      if (!process.env.LEAD_TOKEN) throw new Error("Missing env var LEAD_TOKEN");
 
       const payload = {
         leadToken: process.env.LEAD_TOKEN,
         fullName,
         preferredContact,
-        phoneOrWhatsapp: phoneOrWhatsApp, // Apps Script expects phoneOrWhatsapp
+        phoneOrWhatsapp: phoneOrWhatsApp, // Apps Script accepts this
         businessName,
         email: email || "",
-        source: "MohammadAI Website",
+        source,
+        timestamp: new Date().toISOString(),
       };
 
       const res = await fetch(process.env.GSHEET_WEBAPP_URL, {
@@ -115,15 +178,26 @@ exports.handler = async (event) => {
       sheetsBody = { ok: false, error: e?.message || String(e) };
     }
 
-    // 3) Success response (includes Sheets debug info)
+    // 3) Slack alert (do NOT fail the request if Slack fails)
+    const slack = await sendSlackAlert({
+      fullName,
+      preferredContact,
+      phoneOrWhatsApp,
+      businessName,
+      email,
+      source,
+    });
+
+    // 4) Success response (includes Sheets + Slack debug)
     return {
       statusCode: 200,
       headers: corsHeaders(allowOrigin),
       body: JSON.stringify({
         ok: true,
         message: "Lead submitted successfully",
-        result,
+        email: emailResult,
         sheets: { status: sheetsStatus, body: sheetsBody },
+        slack,
       }),
     };
   } catch (error) {
