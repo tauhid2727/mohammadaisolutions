@@ -1,50 +1,15 @@
+// netlify/functions/send-lead-email.js
+
 const { Resend } = require("resend");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-/**
- * CORS headers
- */
 const corsHeaders = (origin) => ({
   "Access-Control-Allow-Origin": origin || "*",
   "Access-Control-Allow-Headers": "Content-Type, x-lead-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
 });
-
-/**
- * Log a lead to Google Sheets via Apps Script Web App
- * - Does NOT throw to the main flow unless you want it to.
- * - We call it in a try/catch so email never breaks.
- */
-async function logLeadToGoogleSheet(lead) {
-  const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
-  if (!url) throw new Error("Missing GOOGLE_SHEETS_WEBAPP_URL env var");
-
-  // Netlify Node runtime supports fetch in modern runtimes, but this is safest:
-  const fetchFn = global.fetch || (await import("node-fetch")).default;
-
-  const res = await fetchFn(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      // Apps Script should validate this value (must match Script Property / token)
-      leadToken: process.env.LEAD_TOKEN || "",
-      ...lead,
-      source: "mohammadaisolutions.com",
-      timestamp: new Date().toISOString(),
-    }),
-  });
-
-  const data = await res.json().catch(() => ({}));
-
-  // Expect Apps Script to respond with: { ok: true }
-  if (!res.ok || data.ok !== true) {
-    throw new Error(`Sheets logging failed: ${JSON.stringify(data)}`);
-  }
-
-  return data;
-}
 
 exports.handler = async (event) => {
   const allowOrigin = event.headers?.origin || event.headers?.Origin || "*";
@@ -78,7 +43,7 @@ exports.handler = async (event) => {
     const businessName = body.businessName || body.business || "";
     const email = body.email || "";
 
-    // Keep your current minimal requirement so you don’t break anything
+    // Minimal required fields (keep as you had)
     if (!fullName || !businessName) {
       return {
         statusCode: 400,
@@ -91,7 +56,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // 1) SEND EMAIL (same as your current function)
+    // 1) Send email via Resend
     const result = await resend.emails.send({
       from: process.env.EMAIL_FROM,
       to: process.env.EMAIL_TO,
@@ -106,25 +71,51 @@ exports.handler = async (event) => {
       `,
     });
 
-    // 2) LOG TO GOOGLE SHEETS (safe: will not break email if it fails)
-    let sheetsOk = false;
-    let sheetsResult = null;
+    // 2) Log to Google Sheet (Apps Script Web App) — Clean + Safe + Good Logs
+    let sheetsStatus = null;
+    let sheetsBody = null;
 
     try {
-      sheetsResult = await logLeadToGoogleSheet({
+      if (!process.env.GSHEET_WEBAPP_URL) {
+        throw new Error("Missing env var GSHEET_WEBAPP_URL");
+      }
+      if (!process.env.LEAD_TOKEN) {
+        throw new Error("Missing env var LEAD_TOKEN");
+      }
+
+      const payload = {
+        leadToken: process.env.LEAD_TOKEN,
         fullName,
         preferredContact,
-        phoneOrWhatsApp,
+        phoneOrWhatsapp: phoneOrWhatsApp, // Apps Script expects phoneOrWhatsapp
         businessName,
-        email,
+        email: email || "",
+        source: "MohammadAI Website",
+      };
+
+      const res = await fetch(process.env.GSHEET_WEBAPP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-      sheetsOk = true;
+
+      sheetsStatus = res.status;
+
+      const text = await res.text();
+      try {
+        sheetsBody = JSON.parse(text);
+      } catch {
+        sheetsBody = { raw: text };
+      }
+
+      console.log("Google Sheets status:", sheetsStatus);
+      console.log("Google Sheets response:", sheetsBody);
     } catch (e) {
-      console.log("Google Sheets logging error:", e?.message || e);
-      sheetsOk = false;
+      console.log("Google Sheets logging error:", e?.message || String(e));
+      sheetsBody = { ok: false, error: e?.message || String(e) };
     }
 
-    // 3) SUCCESS RESPONSE (email is the primary success)
+    // 3) Success response (includes Sheets debug info)
     return {
       statusCode: 200,
       headers: corsHeaders(allowOrigin),
@@ -132,8 +123,7 @@ exports.handler = async (event) => {
         ok: true,
         message: "Lead submitted successfully",
         result,
-        sheetsOk,
-        sheetsResult,
+        sheets: { status: sheetsStatus, body: sheetsBody },
       }),
     };
   } catch (error) {
