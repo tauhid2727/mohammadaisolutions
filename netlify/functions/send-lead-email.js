@@ -19,29 +19,42 @@ async function sendSlackAlert(lead) {
     return { ok: false, skipped: true };
   }
 
-  const msg = {
-    text:
-`🚀 *NEW LEAD — Mohammad AI Solutions*
-*Name:* ${lead.fullName || "-"}
-*Business:* ${lead.businessName || "-"}
-*Preferred Contact:* ${lead.preferredContact || "-"}
-*Phone/WhatsApp:* ${lead.phoneOrWhatsApp || "-"}
-*Email:* ${lead.email || "-"}
-*Source:* ${lead.source || "Website"}`,
-  };
+  const safe = (v) => (v && String(v).trim() ? String(v) : "-");
+
+  const blocks = [
+    {
+      type: "header",
+      text: { type: "plain_text", text: "🚀 New Lead — Mohammad AI Solutions", emoji: true },
+    },
+    {
+      type: "section",
+      fields: [
+        { type: "mrkdwn", text: `*Name:*\n${safe(lead.fullName)}` },
+        { type: "mrkdwn", text: `*Business:*\n${safe(lead.businessName)}` },
+        { type: "mrkdwn", text: `*Preferred:*\n${safe(lead.preferredContact)}` },
+        { type: "mrkdwn", text: `*Phone/WhatsApp:*\n${safe(lead.phoneOrWhatsApp)}` },
+        { type: "mrkdwn", text: `*Email:*\n${safe(lead.email)}` },
+        { type: "mrkdwn", text: `*Source:*\n${safe(lead.source)}` },
+      ],
+    },
+    { type: "divider" },
+    {
+      type: "context",
+      elements: [
+        { type: "mrkdwn", text: "✅ Logged to Google Sheets + Email sent. Reply here to coordinate follow-up." },
+      ],
+    },
+  ];
 
   try {
     const res = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(msg),
+      body: JSON.stringify({ text: "New lead received", blocks }),
     });
 
-    const status = res.status;
-    console.log("Slack status:", status);
-
-    // Slack returns "ok" body sometimes, but status 200 is what we care about
-    return { ok: status >= 200 && status < 300, status };
+    console.log("Slack status:", res.status);
+    return { ok: res.status >= 200 && res.status < 300, status: res.status };
   } catch (err) {
     console.error("Slack error:", err?.message || String(err));
     return { ok: false, error: err?.message || String(err) };
