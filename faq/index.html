@@ -1,18 +1,96 @@
 <link rel="icon" href="/favicon.ico" />
 <link rel="stylesheet" href="/assets/styles.css" />
-<script type="module">
-  import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
-  Chatbot.init({
-    chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
-    apiHost: "https://chat.mohammadaisolutions.com",
-    theme: {
-      button: {
-        backgroundColor: "#1DC7FF",
-        right: 20,
-        bottom: 20,
-        size: "medium",
-        iconColor: "white"
-      }
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FAQ | Mohammad AI Solutions</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <style>
+    details{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      border-radius: 16px;
+      padding:14px;
+      margin-bottom:12px;
     }
-  });
-</script>
+    summary{cursor:pointer; font-weight:900; list-style:none}
+    summary::-webkit-details-marker{display:none}
+    details p{color:var(--muted); margin:10px 0 0; line-height:1.6; font-size:14px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="nav">
+        <a class="logo" href="/">
+          <div class="logo-mark">AI</div>
+          <div>Mohammad AI Solutions<small>Chatbots • Automation • Smart Websites</small></div>
+        </a>
+        <nav class="links">
+          <a href="/services/">Services</a>
+          <a href="/packages/">Packages</a>
+          <a href="/how-it-works/">How it works</a>
+          <a href="/faq/">FAQ</a>
+        </nav>
+        <a class="cta primary" href="/contact/">Get Free Consultation</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <div class="hero-card" style="padding:18px">
+        <div class="pill"><span class="dot"></span> FAQ</div>
+        <h1 style="margin:12px 0 8px">Quick answers</h1>
+        <p style="margin:0; color:var(--muted); max-width:70ch; line-height:1.6">
+          If you have a unique case, use live chat and tell us your business type + goal.
+        </p>
+      </div>
+
+      <section class="section">
+        <details>
+          <summary>Will this break my website or chat?</summary>
+          <p>No. The chat widget is isolated. We keep your embed stable and only update layout around it.</p>
+        </details>
+        <details>
+          <summary>Do you ask users for contact info right away?</summary>
+          <p>No — we can delay contact info until after business type, goal, and pain point for higher completion.</p>
+        </details>
+        <details>
+          <summary>How fast can we launch?</summary>
+          <p>Often within 48–72 hours after we confirm your flow and where leads should go.</p>
+        </details>
+        <details>
+          <summary>Can you connect Google Sheets / CRM?</summary>
+          <p>Yes. Sheets is fastest; CRM integrations can be added next.</p>
+        </details>
+
+        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+          <a class="btn primary" href="/contact/">Get free consultation</a>
+          <a class="btn" href="#chat">Use live chat</a>
+        </div>
+        <div id="chat" style="height:1px;"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="mini">© <span id="y"></span> Mohammad AI Solutions</div>
+    </div>
+  </footer>
+  <script>document.getElementById("y").textContent = new Date().getFullYear();</script>
+
+  <script type="module">
+    import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
+    Chatbot.init({
+      chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
+      apiHost: "https://chat.mohammadaisolutions.com",
+      theme: { button: { backgroundColor:"#1DC7FF", right:20, bottom:20, size:"medium", iconColor:"white" } }
+    });
+  </script>
+</body>
+</html>
