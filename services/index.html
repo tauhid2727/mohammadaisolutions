@@ -1,18 +1,95 @@
 <link rel="icon" href="/favicon.ico" />
 <link rel="stylesheet" href="/assets/styles.css" />
-<script type="module">
-  import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
-  Chatbot.init({
-    chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
-    apiHost: "https://chat.mohammadaisolutions.com",
-    theme: {
-      button: {
-        backgroundColor: "#1DC7FF",
-        right: 20,
-        bottom: 20,
-        size: "medium",
-        iconColor: "white"
-      }
-    }
-  });
-</script>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Services | Mohammad AI Solutions</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="nav">
+        <a class="logo" href="/">
+          <div class="logo-mark">AI</div>
+          <div>Mohammad AI Solutions<small>Chatbots • Automation • Smart Websites</small></div>
+        </a>
+        <nav class="links">
+          <a href="/services/">Services</a>
+          <a href="/packages/">Packages</a>
+          <a href="/how-it-works/">How it works</a>
+          <a href="/faq/">FAQ</a>
+        </nav>
+        <a class="cta primary" href="/contact/">Get Free Consultation</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <div class="hero-card" style="padding:18px">
+        <div class="pill"><span class="dot"></span> Services</div>
+        <h1 style="margin:12px 0 8px">What we can build for your business</h1>
+        <p style="margin:0; color:var(--muted); max-width:70ch; line-height:1.6">
+          Choose what you need now. You can start simple and add automation later.
+        </p>
+      </div>
+
+      <section class="section">
+        <div class="grid-3">
+          <div class="card">
+            <h3>AI Website Chatbot</h3>
+            <p>FAQ answering, lead qualification, appointment prompts, and better conversion flows.</p>
+          </div>
+          <div class="card">
+            <h3>Lead Capture + Alerts</h3>
+            <p>Capture name/email/phone at the right time and send instant alerts to email/WhatsApp.</p>
+          </div>
+          <div class="card">
+            <h3>Automation + Dashboard</h3>
+            <p>Google Sheets/CRM dashboard, lead status, follow-ups, and SLA tracking.</p>
+          </div>
+          <div class="card">
+            <h3>Smart Landing Pages</h3>
+            <p>Fast pages with clear CTAs and messaging designed to convert.</p>
+          </div>
+          <div class="card">
+            <h3>Integrations</h3>
+            <p>Forms, Calendly/booking, email tools, and other workflow connectors.</p>
+          </div>
+          <div class="card">
+            <h3>Optimization</h3>
+            <p>Improve chat flow based on real conversations and reduce repetitive questions.</p>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+          <a class="btn primary" href="/contact/">Get a free consultation</a>
+          <a class="btn" href="/packages/">See packages</a>
+        </div>
+      </section>
+
+      <div id="chat" style="height:1px;"></div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="mini">© <span id="y"></span> Mohammad AI Solutions</div>
+    </div>
+  </footer>
+  <script>document.getElementById("y").textContent = new Date().getFullYear();</script>
+
+  <script type="module">
+    import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
+    Chatbot.init({
+      chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
+      apiHost: "https://chat.mohammadaisolutions.com",
+      theme: { button: { backgroundColor:"#1DC7FF", right:20, bottom:20, size:"medium", iconColor:"white" } }
+    });
+  </script>
+</body>
+</html>
