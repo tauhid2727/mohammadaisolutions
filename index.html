@@ -6,6 +6,8 @@
   <title>Mohammad AI Solutions | AI Chatbots • Automation • Smart Websites</title>
   <meta name="description" content="We build AI chatbots, automation, and smart websites for small businesses. Capture more leads, respond faster, and automate follow-ups." />
 
+  <link rel="icon" href="/favicon.ico" />
+
   <style>
     :root{
       --bg: #070A12;
@@ -109,6 +111,26 @@
       position:relative;
     }
     .hero-left{padding:28px}
+
+    /* ✅ Shield watermark (VISIBLE + SAFE) */
+    .hero-card.hero-left::after{
+      content:"";
+      position:absolute;
+      top:-80px;
+      right:-140px;
+      width:640px;
+      height:640px;
+      background: url("/assets/shield-top-right.webp") no-repeat center / contain;
+      opacity: .28;                 /* increase/decrease */
+      pointer-events:none;
+      z-index:0;
+      filter: blur(.2px) saturate(1.15);
+    }
+    .hero-card.hero-left > *{
+      position:relative;
+      z-index:1; /* keep all hero text above the shield */
+    }
+
     h1{
       margin:14px 0 10px;
       font-size: clamp(30px, 4.2vw, 48px);
@@ -289,6 +311,14 @@
       .pricing{grid-template-columns: 1fr}
       .faq{grid-template-columns: 1fr}
       .links{display:none}
+      /* make shield smaller on mobile so it doesn't overpower */
+      .hero-card.hero-left::after{
+        width:460px;
+        height:460px;
+        right:-180px;
+        top:-120px;
+        opacity:.24;
+      }
     }
   </style>
 </head>
@@ -504,10 +534,8 @@
       </div>
     </section>
 
-    <!-- Anchor so your "Open live chat" buttons have a target -->
     <div id="chat" style="height:1px;"></div>
 
-    <!-- ✅ Your Flowise Chatbot (unchanged) -->
     <script type="module">
       import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
 
