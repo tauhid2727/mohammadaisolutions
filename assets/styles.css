@@ -171,7 +171,7 @@ footer{
   width: 640px;
   height: 640px;
   background: url("/assets/shield-top-right.webp") no-repeat center / contain;
-  opacity: 0.22;              /* tweak 0.15–0.30 */
+  opacity: 0.35;              /* tweak 0.15–0.30 */
   filter: blur(0.2px) saturate(1.15);
   mix-blend-mode: screen;
   pointer-events: none;
