@@ -1,1 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Automation for Small Business | Mohammad AI Solutions</title>
+  <meta name="description" content="Turn website visitors into qualified leads automatically with AI chat, follow-ups, and a simple lead dashboard. Book a free consultation." />
 
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+
+  <!-- Landing-only styles (safe) -->
+  <style>
+    /* Hybrid layout: dark hero, white sections */
+    .lp-hero{
+      position: relative;
+      overflow: hidden;
+      padding: 64px 0 34px;
+    }
+
+    /* Clean “white” sections while keeping your brand gradients behind */
+    .lp-light{
+      padding: 44px 0;
+      background: rgba(255,255,255,.92);
+      color: #0b1020;
+    }
+    .lp-light .section-title,
+    .lp-light h2,
+    .lp-light h3 { color:#0b1020; }
+    .lp-light .section-sub,
+    .lp-light p { color: rgba(11,16,32,.78); }
+    .lp-light .card{
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(11,16,32,.12);
+      box-shadow: 0 18px 50px rgba(0,0,0,.10);
+    }
+    .lp-light .tag{
+      border: 1px solid rgba(11,16,32,.14);
+      background: rgba(11,16,32,.04);
+      color: rgba(11,16,32,.70);
+    }
+
+    /* A nicer CTA section */
+    .lp-cta{
+      padding: 46px 0 58px;
+    }
+
+    /* Make hero headline slightly bigger for landing */
+    .lp-h1{
+      margin:14px 0 10px;
+      font-size: clamp(32px, 4.6vw, 54px);
+      line-height: 1.05;
+      letter-spacing: -1px;
+    }
+
+    /* Simple form (optional) */
+    .lp-form{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .lp-form input, .lp-form select{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(11,16,32,.16);
+      background: rgba(255,255,255,.92);
+      outline: none;
+      font: inherit;
+    }
+    .lp-form .full{ grid-column: 1 / -1; }
+
+    @media (max-width: 920px){
+      .lp-form{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Same header as other pages -->
+  <header>
+    <div class="container">
+      <div class="nav">
+        <a class="logo" href="/">
+          <div class="logo-mark">AI</div>
+          <div>
+            Mohammad AI Solutions
+            <small>Chatbots • Automation • Smart Websites</small>
+          </div>
+        </a>
+
+        <nav class="links">
+          <a href="/services/">Services</a>
+          <a href="/packages/">Packages</a>
+          <a href="/how-it-works/">How it works</a>
+          <a href="/faq/">FAQ</a>
+        </nav>
+
+        <a class="cta primary" href="#book">Get Free Consultation</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- DARK HERO (with shield watermark) -->
+    <section class="lp-hero">
+      <div class="container">
+        <div class="hero-grid">
+          <!-- Left: copy + CTA -->
+          <div class="hero-card hero-left shield-card" style="padding:28px">
+            <div class="pill"><span class="dot"></span> AI automation for small businesses</div>
+
+            <h1 class="lp-h1">Turn visitors into qualified leads — automatically.</h1>
+
+            <p class="sub">
+              We install an AI chat assistant + lead capture + follow-up automation so you respond fast,
+              stop missed messages, and book more appointments — without hiring more staff.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn primary" href="#book">Book a free consultation</a>
+              <a class="btn" href="#how">See how it works</a>
+              <a class="btn" href="#chat">Open live chat</a>
+            </div>
+
+            <div class="trust">
+              <span>✅ Reply in minutes</span>
+              <span>✅ Leads saved to email/Sheets</span>
+              <span>✅ Follow-ups automated</span>
+              <span>✅ Works 24/7</span>
+            </div>
+          </div>
+
+          <!-- Right: “what you get” panel -->
+          <div class="hero-card hero-right" style="padding:18px">
+            <div class="mock">
+              <div class="mock-top">
+                <span>What you get in 48–72 hours</span>
+                <span>Done-for-you</span>
+              </div>
+
+              <div class="mock-grid">
+                <div class="kpi"><b>24/7</b><small>Always-on lead capture</small></div>
+                <div class="kpi"><b>&lt; 2 min</b><small>Fast first response</small></div>
+                <div class="kpi"><b>1 inbox</b><small>All leads organized</small></div>
+                <div class="kpi"><b>Auto</b><small>Follow-up reminders</small></div>
+              </div>
+
+              <div class="mock-wide">
+                <b style="color:var(--text)">Installed components:</b><br/>
+                AI chat + qualification questions + lead capture + email alerts +
+                Google Sheets dashboard (or CRM later).
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- LIGHT SECTION: Pain -->
+    <section class="lp-light" id="pain">
+      <div class="container">
+        <h2 class="section-title">Most small businesses lose leads for 3 reasons</h2>
+        <p class="section-sub">If any of these sound familiar, this landing page is for you.</p>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="tag">Problem 1</div>
+            <h3>Slow replies</h3>
+            <p>Customers message you after hours or while you’re busy. They move on to competitors.</p>
+          </div>
+          <div class="card">
+            <div class="tag">Problem 2</div>
+            <h3>No follow-up system</h3>
+            <p>Great conversations happen… then nothing. Leads go cold without reminders.</p>
+          </div>
+          <div class="card">
+            <div class="tag">Problem 3</div>
+            <h3>Leads not organized</h3>
+            <p>Messages across web/IG/WhatsApp get messy. You can’t track who needs a reply.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DARK SECTION: How it works -->
+    <section id="how" style="padding:34px 0;">
+      <div class="container">
+        <h2 class="section-title">How it works</h2>
+        <p class="section-sub">A simple, reliable setup that protects your website and improves conversions.</p>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="tag">Step 1</div>
+            <h3>Strategy call (free)</h3>
+            <p>We map your business, your leads, and what questions your customers ask most.</p>
+          </div>
+          <div class="card">
+            <div class="tag">Step 2</div>
+            <h3>Build + connect</h3>
+            <p>We configure the AI flow, connect email/Sheets, and set your follow-up logic.</p>
+          </div>
+          <div class="card">
+            <div class="tag">Step 3</div>
+            <h3>Launch + improve</h3>
+            <p>We go live and refine based on real chat data so lead quality improves over time.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIGHT SECTION: Offer / Booking -->
+    <section class="lp-light lp-cta" id="book">
+      <div class="container">
+        <div class="hero-card shield-card" style="padding:22px; background:rgba(255,255,255,.80); border:1px solid rgba(11,16,32,.12);">
+          <div class="pill" style="border-color:rgba(11,16,32,.14); background:rgba(11,16,32,.04); color:rgba(11,16,32,.72);">
+            <span class="dot"></span> Free consultation
+          </div>
+
+          <h2 style="margin:12px 0 6px" class="section-title">Want a free AI automation consultation?</h2>
+          <p class="section-sub" style="margin:0 0 10px">
+            Tell us your business type + goal. We’ll recommend the fastest setup to stop lead loss.
+          </p>
+
+          <!-- Optional mini form (sends via email link — no backend needed) -->
+          <form class="lp-form" onsubmit="return sendConsultEmail(event)">
+            <input name="name" placeholder="Your name" required />
+            <input name="email" type="email" placeholder="Your email" required />
+            <select name="business" required>
+              <option value="" selected disabled>Business type (select)</option>
+              <option>Home services</option>
+              <option>Health / clinic</option>
+              <option>Auto / dealership</option>
+              <option>Restaurant / retail</option>
+              <option>Agency / professional</option>
+              <option>Other</option>
+            </select>
+            <select name="goal" required>
+              <option value="" selected disabled>Main goal (select)</option>
+              <option>Get more leads</option>
+              <option>Respond faster</option>
+              <option>Book more appointments</option>
+              <option>Automate follow-ups</option>
+              <option>Organize leads</option>
+            </select>
+            <input class="full" name="notes" placeholder="Anything else? (optional)" />
+            <div class="full" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;">
+              <button class="btn primary" type="submit">Email me the plan</button>
+              <a class="btn" href="#chat">Use live chat</a>
+            </div>
+          </form>
+
+          <p style="margin:12px 0 0; color: rgba(11,16,32,.70); font-size:13px;">
+            Or email directly: <b>hello@mohammadaisolutions.com</b> • Cambridge, Ontario • Serving worldwide
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Anchor for chat buttons -->
+    <div id="chat" style="height:1px;"></div>
+
+    <!-- Flowise Chatbot -->
+    <script type="module">
+      import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
+      Chatbot.init({
+        chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
+        apiHost: "https://chat.mohammadaisolutions.com",
+        theme: {
+          button: {
+            backgroundColor: "#22c55e",
+            right: 20,
+            bottom: 20,
+            size: "medium",
+            iconColor: "white"
+          }
+        }
+      });
+    </script>
+
+    <!-- Email helper: uses mailto (no backend) -->
+    <script>
+      function sendConsultEmail(e){
+        e.preventDefault();
+        const f = e.target;
+        const name = encodeURIComponent(f.name.value.trim());
+        const email = encodeURIComponent(f.email.value.trim());
+        const business = encodeURIComponent(f.business.value);
+        const goal = encodeURIComponent(f.goal.value);
+        const notes = encodeURIComponent((f.notes.value || "").trim());
+
+        const subject = encodeURIComponent("Free Consultation Request (Landing Page)");
+        const body = encodeURIComponent(
+          `Name: ${decodeURIComponent(name)}\n` +
+          `Email: ${decodeURIComponent(email)}\n` +
+          `Business type: ${decodeURIComponent(business)}\n` +
+          `Main goal: ${decodeURIComponent(goal)}\n` +
+          `Notes: ${decodeURIComponent(notes)}\n`
+        );
+
+        window.location.href = `mailto:hello@mohammadaisolutions.com?subject=${subject}&body=${body}`;
+        return false;
+      }
+    </script>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footgrid">
+        <div>
+          <div class="logo" style="margin-bottom:8px">
+            <div class="logo-mark">AI</div>
+            <div>Mohammad AI Solutions <small>Cambridge, Ontario • Serving worldwide</small></div>
+          </div>
+          <div class="mini">
+            AI chatbots • automation • smart websites for businesses. Built to increase leads and reduce missed opportunities.
+          </div>
+        </div>
+        <div>
+          <div class="footlinks">
+            <a href="/services/">Services</a>
+            <a href="/packages/">Packages</a>
+            <a href="/faq/">FAQ</a>
+            <a href="mailto:hello@mohammadaisolutions.com">Email</a>
+          </div>
+          <div class="mini" style="margin-top:10px">© <span id="y"></span> Mohammad AI Solutions</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
