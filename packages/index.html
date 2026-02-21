@@ -83,6 +83,21 @@
       apiHost: "https://chat.mohammadaisolutions.com",
       theme: { button: { backgroundColor:"#1DC7FF", right:20, bottom:20, size:"medium", iconColor:"white" } }
     });
-  </script>
+    <script type="module">
+  import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
+  Chatbot.init({
+    chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
+    apiHost: "https://chat.mohammadaisolutions.com",
+    theme: {
+      button: {
+        backgroundColor: "#22c55e",
+        right: 20,
+        bottom: 20,
+        size: "medium",
+        iconColor: "white"
+      }
+    }
+  });
+</script>
 </body>
 </html>
