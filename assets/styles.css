@@ -157,3 +157,30 @@ footer{
   .links{display:none}
   .footgrid{grid-template-columns:1fr}
 }
+/* ===== Hero Shield Watermark ===== */
+
+.hero{
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::after{
+  content: "";
+  position: absolute;
+  top: -80px;
+  right: -120px;
+  width: 650px;
+  height: 650px;
+  background: url("/assets/shield-top-right.webp") no-repeat center / contain;
+  opacity: 0.22;
+  filter: blur(0.6px) saturate(1.15);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero .container,
+.hero-content{
+  position: relative;
+  z-index: 1;
+}
