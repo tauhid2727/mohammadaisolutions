@@ -113,18 +113,29 @@
     .hero-left{padding:28px}
 
     /* ✅ Shield watermark (VISIBLE + SAFE) */
-    .hero-card.hero-left::after{
-      content:"";
-      position:absolute;
-      top:-80px;
-      right:-140px;
-      width:640px;
-      height:640px;
-      background: url("/assets/shield-top-right.webp") no-repeat center / contain;
-      opacity: .28;                 /* increase/decrease */
-      pointer-events:none;
-      z-index:0;
-      filter: blur(.2px) saturate(1.15);
+    .hero-card.hero-left{
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-card.hero-left::after{
+  content:"";
+  position:absolute;
+  top:-80px;
+  right:-140px;
+  width:640px;
+  height:640px;
+  background: url("/assets/shield-top-right.webp") no-repeat center / contain;
+  opacity: .28;
+  pointer-events:none;
+  z-index:0;
+  filter: blur(.2px) saturate(1.15);
+  mix-blend-mode: screen;
+}
+
+.hero-card.hero-left > *{
+  position:relative;
+  z-index:1;
     }
     .hero-card.hero-left > *{
       position:relative;
