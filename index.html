@@ -3,11 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mohammad 
-    AI 
-    Solutions | AI Chatbots • Automation • Smart Websites</title>
+  <title>Mohammad AI Solutions | AI Chatbots • Automation • Smart Websites</title>
   <meta name="description" content="We build AI chatbots, automation, and smart websites for small businesses. Capture more leads, respond faster, and automate follow-ups." />
-
   <link rel="icon" href="/favicon.ico" />
 
   <style>
@@ -27,8 +24,10 @@
       --radius2: 24px;
       --max: 1120px;
     }
+
     *{box-sizing:border-box}
     html,body{height:100%}
+
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
@@ -41,8 +40,10 @@
       overflow-x:hidden;
       scroll-behavior:smooth;
     }
+
     a{color:inherit; text-decoration:none}
     .container{max-width:var(--max); margin:0 auto; padding:0 20px}
+
     .pill{
       display:inline-flex; gap:10px; align-items:center;
       padding:8px 12px; border:1px solid var(--border);
@@ -58,6 +59,9 @@
       box-shadow: 0 0 18px rgba(124,58,237,.55);
     }
 
+    /* =========================
+       HEADER / NAV
+    ========================= */
     header{
       position:sticky; top:0; z-index:20;
       backdrop-filter: blur(14px);
@@ -97,112 +101,9 @@
       border-color: rgba(255,255,255,.16);
     }
 
-    .hero{padding:56px 0 34px;}
-    .hero-grid{
-      display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap:22px;
-      align-items:stretch;
-    }
-    .hero-card{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.05);
-      border-radius: var(--radius2);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      position:relative;
-    }
-    .hero-left{padding:28px}
-    /* ✅ HERO GRID (single source of truth) */
-.hero-grid{
-  display:grid;
-  grid-template-columns: 1.15fr .85fr;
-  gap:28px;
-  align-items:stretch;
-}
-
-/* ✅ Right visual panel */
-.hero-visual{
-  border:1px solid rgba(255,255,255,.10);
-  border-radius: var(--radius2);
-  box-shadow: var(--shadow);
-  position:relative;
-  overflow:hidden;
-  min-height: 420px;
-  background:
-    radial-gradient(circle at 60% 40%, rgba(124,58,237,.18), transparent 60%),
-    radial-gradient(circle at 40% 70%, rgba(56,189,248,.15), transparent 60%),
-    rgba(255,255,255,.04);
-}
-
-/* Brand watermark */
-.brand-watermark{
-  position:absolute;
-  top:42px;
-  left:34px;
-  font-size: 34px;
-  font-weight: 900;
-  letter-spacing: .5px;
-  color: rgba(255,255,255,.78);
-  text-shadow: 0 10px 40px rgba(0,0,0,.45);
-  z-index:2;
-  pointer-events:none;
-}
-.brand-tagline{
-  position:absolute;
-  top:86px;
-  left:34px;
-  font-size: 14px;
-  font-weight: 700;
-  color: rgba(255,255,255,.60);
-  z-index:2;
-  pointer-events:none;
-}
-/* Optional shield background inside right panel */
-.hero-visual::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background: url("/assets/shield-top-right.webp") no-repeat center / contain;
-  opacity:.20;
-  pointer-events:none;
-  mix-blend-mode: screen;
-}
-
-/* keep watermark above shield */
-.hero-visual > *{
-  position:relative;
-  z-index:1;
-}
-
-    /* ✅ Shield watermark (VISIBLE + SAFE) */
-.hero-card.hero-left{
-  position: relative;
-  overflow: hidden;
-}
-
-/* keep all hero text above the shield */
-.hero-card.hero-left > *{
-  position:relative;
-  z-index:1;
-}
-    h1{
-      margin:14px 0 10px;
-      font-size: clamp(30px, 4.2vw, 48px);
-      line-height:1.08;
-      letter-spacing:-.8px;
-    }
-    .sub{
-      margin:0 0 18px;
-      color:var(--muted);
-      font-size:16px;
-      line-height:1.55;
-      max-width: 58ch;
-    }
-    .hero-actions{
-      display:flex; gap:12px; flex-wrap:wrap;
-      margin:18px 0 0;
-    }
+    /* =========================
+       BUTTONS
+    ========================= */
     .btn{
       display:inline-flex; align-items:center; justify-content:center; gap:10px;
       padding:12px 16px;
@@ -220,28 +121,159 @@
       background: linear-gradient(135deg, rgba(34,197,94,.92), rgba(56,189,248,.85));
       border-color: rgba(255,255,255,.16);
     }
+
+    /* =========================
+       HERO (FINAL)
+    ========================= */
+    .hero{ padding:56px 0 34px; }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .hero-card{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .hero-left{ padding:28px; }
+
+    h1{
+      margin:14px 0 10px;
+      font-size: clamp(30px, 4.2vw, 48px);
+      line-height:1.08;
+      letter-spacing:-.8px;
+    }
+    .sub{
+      margin:0 0 18px;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.55;
+      max-width: 58ch;
+    }
+
+    .hero-actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin:18px 0 0;
+    }
+
+    /* Keep left from feeling too "clumsy": only 2 proof chips */
     .trust{
-      display:flex; gap:10px; flex-wrap:wrap;
-      margin-top:16px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
       color:var(--muted2);
       font-size:13px;
     }
     .trust span{
-      padding:8px 10px; border-radius:999px;
+      padding:8px 10px;
+      border-radius:999px;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.04);
     }
+
+    /* RIGHT BRAND PANEL */
+    .hero-visual{
+      position: relative;
+      min-height: 420px;
+      border-radius: var(--radius2);
+      overflow: hidden;
+      border:1px solid rgba(255,255,255,.10);
+      background:
+        radial-gradient(900px 600px at 70% 35%, rgba(56,189,248,.14), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+    }
+
+    /* Big AI watermark */
+    .brand-watermark{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      font-size: 220px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,.08);
+      pointer-events:none;
+      user-select:none;
+      z-index:0;
+    }
+
+    /* Shield behind content */
+    .hero-visual::after{
+      content:"";
+      position:absolute;
+      right:-90px;
+      bottom:-120px;
+      width:520px;
+      height:520px;
+      background: url("/assets/shield-top-right.webp") no-repeat center / contain;
+      opacity: .42;
+      pointer-events:none;
+      z-index:0;
+      filter: saturate(1.15);
+      mix-blend-mode: screen;
+    }
+
+    /* Foreground content on right */
+    .hero-brand{
+      position:relative;
+      z-index:1;
+      padding: 26px;
+    }
+    .hero-brand h2{
+      margin: 0 0 8px;
+      font-size: 34px;
+      letter-spacing: -.4px;
+    }
+    .hero-brand .tagline{
+      margin: 0 0 14px;
+      color: var(--muted2);
+      font-weight: 700;
+    }
+
+    .proof-grid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .proof{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .proof b{ display:block; font-size:18px; }
+    .proof small{ color: var(--muted2); }
+
+    /* =========================
+       SECTIONS
+    ========================= */
     section{padding:26px 0}
     .section-title{
       font-size:22px; margin:0 0 8px;
       letter-spacing:-.2px;
     }
     .section-sub{margin:0 0 16px; color:var(--muted); line-height:1.6}
+
     .grid-3{
       display:grid;
       grid-template-columns: repeat(3, 1fr);
       gap:12px;
     }
+
     .card{
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.05);
@@ -304,6 +336,9 @@
     summary::-webkit-details-marker{display:none}
     details p{color:var(--muted); margin:10px 0 0; line-height:1.55; font-size:14px}
 
+    /* =========================
+       FOOTER
+    ========================= */
     footer{
       padding:28px 0 40px;
       border-top:1px solid rgba(255,255,255,.08);
@@ -320,29 +355,24 @@
     .footlinks a{color:var(--muted)}
     .footlinks a:hover{color:var(--text)}
 
+    /* =========================
+       MOBILE
+    ========================= */
     @media (max-width: 920px){
-      .hero-visual{ display:none;}
+      .hero-grid{ grid-template-columns: 1fr; }
       .grid-3{grid-template-columns: 1fr}
       .pricing{grid-template-columns: 1fr}
       .faq{grid-template-columns: 1fr}
       .links{display:none}
-      /* make shield smaller on mobile so it doesn't overpower */
-  .hero-visual::before{
-  content:"";
-  position:absolute;
-  inset:-40px;
-  background:url("/assets/shield-top-right.webp") no-repeat center / 85%;
-  opacity:.22;
-  filter: saturate(1.2);
-  pointer-events:none;
-  z-index:0;
-}
-      .hero-card.hero-left::after{
-        width:460px;
-        height:460px;
-        right:-180px;
-        top:-120px;
-        opacity:.24;
+
+      .hero-visual{ min-height: 280px; }
+      .brand-watermark{ font-size: 140px; }
+      .hero-visual::after{
+        width:380px;
+        height:380px;
+        right:-140px;
+        bottom:-140px;
+        opacity:.35;
       }
     }
   </style>
@@ -359,6 +389,7 @@
             <small>Chatbots • Automation • Smart Websites</small>
           </div>
         </div>
+
         <div class="links">
           <a href="#services">Services</a>
           <a href="/automation/">Automation</a>
@@ -366,44 +397,60 @@
           <a href="#how">How it works</a>
           <a href="#faq">FAQ</a>
         </div>
+
         <a class="cta primary" href="#contact">Get Free Consultation</a>
       </div>
     </div>
   </header>
 
   <main>
-  <div class="container hero">
-    <div class="hero-grid">
+    <!-- HERO -->
+    <div class="container hero">
+      <div class="hero-grid">
 
-      <div class="hero-card hero-left shield-card">
-        <div class="pill"><span class="dot"></span> Built for small businesses — managed end-to-end</div>
-        <h1>AI Automation for Small Businesses.</h1>
-        <p class="sub">
-          We build AI chatbots, CRM automation, and smart workflows that capture more leads, respond instantly, and grow your business — without hiring more staff.
-        </p>
+        <!-- LEFT: Lead-gen -->
+        <div class="hero-card hero-left">
+          <div class="pill"><span class="dot"></span> Built for small businesses — managed end-to-end</div>
 
-        <div class="hero-actions">
-          <a class="btn primary" href="#contact">Get a free consultation</a>
-          <a class="btn" href="/automation/">Explore AI Automation</a>
+          <h1>AI Automation for Small Businesses.</h1>
+
+          <p class="sub">
+            We build AI chatbots, CRM automation, and smart workflows that capture more leads, respond instantly,
+            and grow your business — without hiring more staff.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn primary" href="#contact">Get a free consultation</a>
+            <a class="btn" href="/automation/">Explore AI Automation</a>
+          </div>
+
+          <div class="trust">
+            <span>✅ Lead capture + email alerts</span>
+            <span>✅ Setup in 48–72 hours</span>
+          </div>
         </div>
 
-        <div class="trust">
-          <span>✅ Lead capture + email alerts</span>
-          <span>✅ WhatsApp / Website chat</span>
-          <span>✅ Works 24/7</span>
-          <span>✅ Setup in 48–72 hours</span>
+        <!-- RIGHT: Brand panel -->
+        <div class="hero-card hero-visual">
+          <div class="brand-watermark">AI</div>
+
+          <div class="hero-brand">
+            <h2>Mohammad AI Solutions</h2>
+            <p class="tagline">Chatbots • Automation • Smart Websites</p>
+
+            <div class="proof-grid">
+              <div class="proof"><b>24/7</b><small>Instant replies</small></div>
+              <div class="proof"><b>1 inbox</b><small>All leads organized</small></div>
+              <div class="proof"><b>Email + WhatsApp</b><small>Follow-ups automated</small></div>
+              <div class="proof"><b>Fast</b><small>Launch in 48–72 hours</small></div>
+            </div>
+          </div>
         </div>
+
       </div>
-
-      <div class="hero-visual">
-  <div class="brand-watermark">Mohammad AI Solutions</div>
-  <div class="brand-tagline">Chatbots • Automation • Smart Websites</div>
-</div>
-
     </div>
-  </div>
- </div>
 
+    <!-- SERVICES -->
     <section id="services">
       <div class="container">
         <h2 class="section-title">What we build for you</h2>
@@ -429,6 +476,7 @@
       </div>
     </section>
 
+    <!-- HOW -->
     <section id="how">
       <div class="container">
         <h2 class="section-title">How it works</h2>
@@ -454,6 +502,7 @@
       </div>
     </section>
 
+    <!-- PACKAGES -->
     <section id="packages">
       <div class="container">
         <h2 class="section-title">Packages</h2>
@@ -500,6 +549,7 @@
       </div>
     </section>
 
+    <!-- FAQ -->
     <section id="faq">
       <div class="container">
         <h2 class="section-title">FAQ</h2>
@@ -526,6 +576,7 @@
       </div>
     </section>
 
+    <!-- CONTACT -->
     <section id="contact">
       <div class="container">
         <div class="hero-card" style="padding:18px">
@@ -549,6 +600,7 @@
 
     <div id="chat" style="height:1px;"></div>
 
+    <!-- FLOWISE WIDGET -->
     <script type="module">
       import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
 
