@@ -9,45 +9,6 @@
   <link rel="icon" href="/favicon.ico" />
 
   <style>
-    /* === HERO GRID UPDATE === */
-.hero-grid{
-  display:grid;
-  grid-template-columns: 1.15fr .85fr;
-  gap: 28px;
-  align-items: stretch;
-}
-
-/* === RIGHT VISUAL BLOCK === */
-.hero-visual{
-  position: relative;
-  min-height: 420px;
-  border-radius: 22px;
-  overflow: hidden;
-}
-
-/* === BRAND WATERMARK === */
-.brand-watermark{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  font-size: 88px;
-  font-weight: 900;
-  letter-spacing: 6px;
-  color: rgba(255,255,255,.06);
-  pointer-events:none;
-  white-space: nowrap;
-}
-
-/* === MOBILE FIX === */
-@media (max-width: 900px){
-  .hero-grid{ 
-    grid-template-columns: 1fr; 
-  }
-  .hero-visual{
-    display:none;
-  }
-}
     :root{
       --bg: #070A12;
       --surface: rgba(255,255,255,.06);
@@ -150,6 +111,56 @@
       position:relative;
     }
     .hero-left{padding:28px}
+    /* ✅ HERO GRID (single source of truth) */
+.hero-grid{
+  display:grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap:28px;
+  align-items:stretch;
+}
+
+/* ✅ Right visual panel */
+.hero-visual{
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.05);
+  border-radius: var(--radius2);
+  box-shadow: var(--shadow);
+  position:relative;
+  overflow:hidden;
+  min-height: 420px;
+}
+
+/* Brand watermark */
+.brand-watermark{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 64px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: rgba(255,255,255,.06);
+  pointer-events:none;
+  white-space: nowrap;
+}
+
+/* Optional shield background inside right panel */
+.hero-visual::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: url("/assets/shield-top-right.webp") no-repeat center / contain;
+  opacity:.20;
+  pointer-events:none;
+  mix-blend-mode: screen;
+}
+
+/* keep watermark above shield */
+.hero-visual > *{
+  position:relative;
+  z-index:1;
+}
 
     /* ✅ Shield watermark (VISIBLE + SAFE) */
 .hero-card.hero-left{
@@ -222,46 +233,6 @@
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.04);
     }
-
-    .hero-right{padding:18px}
-    .mock{
-      padding:14px;
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid rgba(255,255,255,.10);
-      height:100%;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-    .mock-top{
-      display:flex; justify-content:space-between; align-items:center;
-      color:var(--muted2);
-      font-size:12px;
-    }
-    .mock-grid{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:10px;
-    }
-    .kpi{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.05);
-      border-radius: 16px;
-      padding:12px;
-    }
-    .kpi b{font-size:20px; display:block}
-    .kpi small{color:var(--muted2)}
-    .mock-wide{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.05);
-      border-radius: 16px;
-      padding:12px;
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.45;
-    }
-
     section{padding:26px 0}
     .section-title{
       font-size:22px; margin:0 0 8px;
@@ -393,32 +364,36 @@
   </header>
 
   <main>
-    <div class="container hero">
-      <div class="hero-grid">
-        <div class="hero-card hero-left shield-card">
-          <div class="pill"><span class="dot"></span> Built for small businesses — managed end-to-end</div>
-          <h1>AI Automation for Small Businesses.</h1>
-          <p class="sub">
-            We build AI chatbots, CRM automation, and smart workflows that capture more leads, respond instantly, and grow your business — without hiring more staff.
-          </p>
+  <div class="container hero">
+    <div class="hero-grid">
 
-          <div class="hero-actions">
-            <a class="btn primary" href="#contact">Get a free consultation</a>
-            <a class="btn" href="/automation/">Explore AI Automation</a>
-          </div>
+      <div class="hero-card hero-left shield-card">
+        <div class="pill"><span class="dot"></span> Built for small businesses — managed end-to-end</div>
+        <h1>AI Automation for Small Businesses.</h1>
+        <p class="sub">
+          We build AI chatbots, CRM automation, and smart workflows that capture more leads, respond instantly, and grow your business — without hiring more staff.
+        </p>
 
-          <div class="trust">
-            <span>✅ Lead capture + email alerts</span>
-            <span>✅ WhatsApp / Website chat</span>
-            <span>✅ Works 24/7</span>
-            <span>✅ Setup in 48–72 hours</span>
-          </div>
-          <div class="hero-visual">
-           <div class="brand-watermark">MOHAMMAD AI</div>
-          </div>
+        <div class="hero-actions">
+          <a class="btn primary" href="#contact">Get a free consultation</a>
+          <a class="btn" href="/automation/">Explore AI Automation</a>
+        </div>
+
+        <div class="trust">
+          <span>✅ Lead capture + email alerts</span>
+          <span>✅ WhatsApp / Website chat</span>
+          <span>✅ Works 24/7</span>
+          <span>✅ Setup in 48–72 hours</span>
         </div>
       </div>
+
+      <div class="hero-visual">
+        <div class="brand-watermark">MOHAMMAD AI</div>
+      </div>
+
     </div>
+  </div>
+ </div>
 
     <section id="services">
       <div class="container">
