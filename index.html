@@ -122,12 +122,15 @@
 /* ✅ Right visual panel */
 .hero-visual{
   border:1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.05);
   border-radius: var(--radius2);
   box-shadow: var(--shadow);
   position:relative;
   overflow:hidden;
   min-height: 420px;
+  background:
+    radial-gradient(circle at 60% 40%, rgba(124,58,237,.18), transparent 60%),
+    radial-gradient(circle at 40% 70%, rgba(56,189,248,.15), transparent 60%),
+    rgba(255,255,255,.04);
 }
 
 /* Brand watermark */
@@ -137,7 +140,8 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size: 64px;
+  font-size: 48px;
+  opacity: .05;
   font-weight: 900;
   letter-spacing: 6px;
   color: rgba(255,255,255,.06);
@@ -323,7 +327,7 @@
     .footlinks a:hover{color:var(--text)}
 
     @media (max-width: 920px){
-      .hero-grid{grid-template-columns: 1fr}
+      .hero-visual{ display:none;}
       .grid-3{grid-template-columns: 1fr}
       .pricing{grid-template-columns: 1fr}
       .faq{grid-template-columns: 1fr}
@@ -388,7 +392,7 @@
       </div>
 
       <div class="hero-visual">
-        <div class="brand-watermark">MOHAMMAD AI</div>
+        <div class="brand-watermark">MAS</div>
       </div>
 
     </div>
