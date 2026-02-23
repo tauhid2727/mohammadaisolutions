@@ -152,7 +152,7 @@
     .hero-left{padding:28px}
 
     /* ✅ Shield watermark (VISIBLE + SAFE) */
-    .hero-card.hero-left{
+.hero-card.hero-left{
   position: relative;
   overflow: hidden;
 }
@@ -172,15 +172,11 @@
   mix-blend-mode: screen;
 }
 
+/* keep all hero text above the shield */
 .hero-card.hero-left > *{
   position:relative;
   z-index:1;
-    }
-    .hero-card.hero-left > *{
-      position:relative;
-      z-index:1; /* keep all hero text above the shield */
-    }
-
+}
     h1{
       margin:14px 0 10px;
       font-size: clamp(30px, 4.2vw, 48px);
