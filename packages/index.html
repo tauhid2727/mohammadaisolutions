@@ -3,10 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Contact | Mohammad AI Solutions</title>
+  <title>Packages | Mohammad AI Solutions</title>
 
   <link rel="icon" href="/favicon.ico" />
   <link rel="stylesheet" href="/assets/styles.css" />
+
+  <style>
+    /* Small enhancements for pricing cards (keeps your existing theme) */
+    .price {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 6px 0 6px;
+      letter-spacing: .2px;
+    }
+    .price small{
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-left: 6px;
+    }
+    .goodfor{
+      margin: 10px 0 10px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+    .features{
+      margin: 10px 0 0;
+      padding-left: 18px;
+      line-height: 1.6;
+    }
+    .features li{ margin: 6px 0; }
+    .badge{
+      display:inline-block;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      margin-top: 8px;
+    }
+    .card.highlight{
+      outline: 2px solid rgba(34,197,94,.45);
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+    .card .mutedline{ color: var(--muted); font-size: 13px; margin: 0; }
+  </style>
 </head>
 
 <body>
@@ -33,32 +76,85 @@
       <div class="hero-card shield-card" style="padding:18px">
         <div class="pill"><span class="dot"></span> Packages</div>
         <h1 style="margin:12px 0 8px">Simple packages you can upgrade anytime</h1>
-        <p style="margin:0; color:var(--muted); max-width:70ch; line-height:1.6">
-          Start with what you need today — add automation and reporting as you grow.
+        <p style="margin:0; color:var(--muted); max-width:72ch; line-height:1.6">
+          Built for <b>small businesses</b> that want more leads, faster follow-ups, and a cleaner customer experience.
         </p>
       </div>
 
       <section class="section">
         <div class="grid-3">
+          <!-- STARTER -->
           <div class="card">
-            <h3>Starter</h3>
-            <p>Website chatbot + FAQ, basic lead capture, email alerts, and clean setup.</p>
+            <h3 style="margin:0 0 4px">Starter</h3>
+            <p class="mutedline">Website chatbot + basic lead capture</p>
+
+            <div class="price">$299 <small>/ one-time setup</small></div>
+            <div class="badge">Good for: Small businesses starting with AI</div>
+
+            <p class="goodfor">
+              Great for small businesses who want a professional chatbot that answers questions and captures leads without complexity.
+            </p>
+
+            <ul class="features">
+              <li>AI Website Chatbot + FAQ flow</li>
+              <li>Basic lead capture (name + contact)</li>
+              <li>Email alerts for every new lead</li>
+              <li>Clean embed + branded styling</li>
+            </ul>
           </div>
-          <div class="card">
-            <h3>Growth</h3>
-            <p>Starter + lead status tracking (Sheets/CRM), improved qualification, follow-up prompts.</p>
+
+          <!-- GROWTH (Recommended) -->
+          <div class="card highlight">
+            <h3 style="margin:0 0 4px">Growth <span style="color:var(--brand)">• Recommended</span></h3>
+            <p class="mutedline">Lead tracking + follow-up prompts</p>
+
+            <div class="price">$599 <small>/ one-time setup</small></div>
+            <div class="badge">Good for: Small businesses scaling leads</div>
+
+            <p class="goodfor">
+              Best for small businesses that need lead tracking, better qualification, and simple follow-up automation.
+            </p>
+
+            <ul class="features">
+              <li>Everything in Starter</li>
+              <li>Lead status tracking (Google Sheets / CRM)</li>
+              <li>Smarter qualification questions (less repetition)</li>
+              <li>Follow-up prompts + reminders</li>
+              <li>Basic reporting view (weekly snapshot)</li>
+            </ul>
           </div>
+
+          <!-- PRO -->
           <div class="card">
-            <h3>Pro</h3>
-            <p>Growth + advanced automation, reporting, multi-channel routing, SLA monitoring.</p>
+            <h3 style="margin:0 0 4px">Pro</h3>
+            <p class="mutedline">Advanced automation + routing</p>
+
+            <div class="price">$999 <small>/ one-time setup</small></div>
+            <div class="badge">Good for: Small businesses running ops</div>
+
+            <p class="goodfor">
+              Ideal for small businesses that want multi-channel routing, automation workflows, and clear performance tracking.
+            </p>
+
+            <ul class="features">
+              <li>Everything in Growth</li>
+              <li>Advanced automations (email/SMS/WhatsApp routing)</li>
+              <li>Multi-channel lead delivery + tagging</li>
+              <li>SLA monitoring (response-time checks)</li>
+              <li>Monthly performance report</li>
+            </ul>
           </div>
         </div>
 
         <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
-          <a class="btn primary" href="/contact/">Ask for pricing</a>
+          <a class="btn primary" href="/contact/">Get Free Consultation</a>
           <a class="btn" href="/services/">See services</a>
           <a class="btn" href="#chat">Use live chat</a>
         </div>
+
+        <p style="margin-top:10px; color:var(--muted); font-size:13px; line-height:1.6">
+          * Pricing shown is for typical small-business setups. Final price can change if you need custom integrations, multiple locations, or advanced CRM work.
+        </p>
 
         <div id="chat" style="height:1px;"></div>
       </section>
@@ -70,30 +166,27 @@
       <div class="mini">© <span id="y"></span> Mohammad AI Solutions</div>
     </div>
   </footer>
-  <script>document.getElementById("y").textContent = new Date().getFullYear();</script>
 
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+
+  <!-- ✅ ONE clean Flowise embed (no duplicates) -->
   <script type="module">
     import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
     Chatbot.init({
       chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
       apiHost: "https://chat.mohammadaisolutions.com",
-      theme: { button: { backgroundColor:"#1DC7FF", right:20, bottom:20, size:"medium", iconColor:"white" } }
-    });
-    <script type="module">
-  import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
-  Chatbot.init({
-    chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
-    apiHost: "https://chat.mohammadaisolutions.com",
-    theme: {
-      button: {
-        backgroundColor: "#22c55e",
-        right: 20,
-        bottom: 20,
-        size: "medium",
-        iconColor: "white"
+      theme: {
+        button: {
+          backgroundColor: "#22c55e",
+          right: 20,
+          bottom: 20,
+          size: "medium",
+          iconColor: "white"
+        }
       }
-    }
-  });
-</script>
+    });
+  </script>
 </body>
 </html>
