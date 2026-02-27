@@ -9,46 +9,103 @@
   <link rel="stylesheet" href="/assets/styles.css" />
 
   <style>
-    /* Small enhancements for pricing cards (keeps your existing theme) */
-    .price {
-      font-size: 28px;
-      font-weight: 800;
-      margin: 6px 0 6px;
-      letter-spacing: .2px;
+    /* ========= Packages page polish (works with your existing styles.css) ========= */
+    .pricing-grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+      align-items:stretch;
+      margin-top:14px;
     }
-    .price small{
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-      margin-left: 6px;
+    .plan{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      border-radius: 22px;
+      padding:18px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.45);
+      position:relative;
+      overflow:hidden;
     }
+    .plan h3{ margin:0 0 6px; font-size:18px; }
+    .kicker{ margin:0 0 10px; color:var(--muted); font-size:13px; line-height:1.5; }
+    .badge{
+      position:absolute; top:14px; right:14px;
+      font-size:12px; font-weight:800;
+      padding:6px 10px; border-radius:999px;
+      background: linear-gradient(135deg, rgba(34,197,94,.92), rgba(56,189,248,.85));
+      border:1px solid rgba(255,255,255,.14);
+    }
+    .price-row{ display:flex; gap:12px; flex-wrap:wrap; margin: 12px 0 10px; }
+    .price-box{
+      flex:1 1 150px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      border-radius: 16px;
+      padding:12px;
+    }
+    .price-label{ color:var(--muted2); font-size:12px; }
+    .price{
+      margin-top:6px;
+      font-size:28px;
+      font-weight:900;
+      letter-spacing:-.2px;
+      color:var(--text);
+    }
+    .price small{ font-size:12px; font-weight:700; color:var(--muted2); margin-left:6px; }
     .goodfor{
-      margin: 10px 0 10px;
-      color: var(--muted);
-      line-height: 1.55;
-      font-size: 14px;
+      margin: 10px 0 12px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.6;
     }
     .features{
-      margin: 10px 0 0;
-      padding-left: 18px;
-      line-height: 1.6;
+      margin:0;
+      padding-left:18px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.65;
     }
     .features li{ margin: 6px 0; }
-    .badge{
-      display:inline-block;
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
+    .fineprint{
+      margin-top:12px;
+      color:var(--muted2);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    /* Comparison table */
+    .compare{
+      margin-top:18px;
+      border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.04);
-      color: var(--text);
-      margin-top: 8px;
+      border-radius: 22px;
+      overflow:hidden;
     }
-    .card.highlight{
-      outline: 2px solid rgba(34,197,94,.45);
-      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    .compare table{ width:100%; border-collapse:collapse; }
+    .compare th, .compare td{
+      padding:12px 12px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      vertical-align:top;
+      font-size:14px;
     }
-    .card .mutedline{ color: var(--muted); font-size: 13px; margin: 0; }
+    .compare th{
+      text-align:left;
+      color:var(--text);
+      background: rgba(255,255,255,.03);
+      font-weight:900;
+    }
+    .compare td{ color:var(--muted); }
+    .tick{ color: #22c55e; font-weight:900; }
+    .dash{ color: var(--muted2); }
+    .col-head{ color:var(--text); font-weight:900; }
+    .note-row td{ font-size:12px; color:var(--muted2); }
+
+    /* Responsive */
+    @media (max-width: 920px){
+      .pricing-grid{ grid-template-columns: 1fr; }
+      .compare{ overflow:auto; }
+      .compare table{ min-width: 720px; }
+    }
   </style>
 </head>
 
@@ -58,7 +115,7 @@
       <div class="nav">
         <a class="logo" href="/">
           <div class="logo-mark">AI</div>
-          <div>Mohammad AI Solutions<small>Chatbots • Automation • Smart Websites</small></div>
+          <div>Mohammad AI Solutions<small>Chatbots • CRM Automation • Smart Workflows</small></div>
         </a>
         <nav class="links">
           <a href="/services/">Services</a>
@@ -75,86 +132,192 @@
     <div class="container">
       <div class="hero-card shield-card" style="padding:18px">
         <div class="pill"><span class="dot"></span> Packages</div>
-        <h1 style="margin:12px 0 8px">Simple packages you can upgrade anytime</h1>
-        <p style="margin:0; color:var(--muted); max-width:72ch; line-height:1.6">
-          Built for <b>small businesses</b> that want more leads, faster follow-ups, and a cleaner customer experience.
+        <h1 style="margin:12px 0 8px">AI Automation for Small Businesses</h1>
+        <p style="margin:0; color:var(--muted); max-width:74ch; line-height:1.65">
+          <b>AI systems that help small businesses get and convert more leads</b> — fast setup, clean workflows, and ongoing maintenance.
         </p>
       </div>
 
+      <!-- PRICING CARDS -->
       <section class="section">
-        <div class="grid-3">
-          <!-- STARTER -->
-          <div class="card">
-            <h3 style="margin:0 0 4px">Starter</h3>
-            <p class="mutedline">Website chatbot + basic lead capture</p>
+        <div class="pricing-grid">
 
-            <div class="price">$299 <small>/ one-time setup</small></div>
-            <div class="badge">Good for: Small businesses starting with AI</div>
+          <!-- Starter -->
+          <div class="plan">
+            <h3>Starter</h3>
+            <p class="kicker">Get a lead-capturing chatbot live quickly.</p>
 
-            <p class="goodfor">
-              Great for small businesses who want a professional chatbot that answers questions and captures leads without complexity.
-            </p>
+            <div class="price-row">
+              <div class="price-box">
+                <div class="price-label">Setup</div>
+                <div class="price">$197 <small>one-time</small></div>
+              </div>
+              <div class="price-box">
+                <div class="price-label">Maintenance</div>
+                <div class="price">$49 <small>/ month</small></div>
+              </div>
+            </div>
+
+            <p class="goodfor"><b>Good for:</b> small businesses starting with AI to capture leads and answer questions 24/7.</p>
 
             <ul class="features">
               <li>AI Website Chatbot + FAQ flow</li>
               <li>Basic lead capture (name + contact)</li>
-              <li>Email alerts for every new lead</li>
-              <li>Clean embed + branded styling</li>
+              <li>Email alerts for new leads</li>
+              <li>Branded embed + clean setup</li>
+              <li>1 round of revisions</li>
             </ul>
+
+            <p class="fineprint">Maintenance includes monitoring, small tweaks, and uptime checks (fair-use).</p>
           </div>
 
-          <!-- GROWTH (Recommended) -->
-          <div class="card highlight">
-            <h3 style="margin:0 0 4px">Growth <span style="color:var(--brand)">• Recommended</span></h3>
-            <p class="mutedline">Lead tracking + follow-up prompts</p>
+          <!-- Growth -->
+          <div class="plan" style="outline:2px solid rgba(34,197,94,.45);">
+            <div class="badge">Most Popular</div>
+            <h3>Growth</h3>
+            <p class="kicker">Track leads and improve conversions with smarter flows.</p>
 
-            <div class="price">$599 <small>/ one-time setup</small></div>
-            <div class="badge">Good for: Small businesses scaling leads</div>
+            <div class="price-row">
+              <div class="price-box">
+                <div class="price-label">Setup</div>
+                <div class="price">$497 <small>one-time</small></div>
+              </div>
+              <div class="price-box">
+                <div class="price-label">Maintenance</div>
+                <div class="price">$99 <small>/ month</small></div>
+              </div>
+            </div>
 
-            <p class="goodfor">
-              Best for small businesses that need lead tracking, better qualification, and simple follow-up automation.
-            </p>
+            <p class="goodfor"><b>Good for:</b> small businesses getting steady leads and needing follow-ups + organization.</p>
 
             <ul class="features">
               <li>Everything in Starter</li>
-              <li>Lead status tracking (Google Sheets / CRM)</li>
-              <li>Smarter qualification questions (less repetition)</li>
+              <li>Lead status tracking (Google Sheets / basic CRM)</li>
+              <li>Smarter qualification (less repetition)</li>
               <li>Follow-up prompts + reminders</li>
-              <li>Basic reporting view (weekly snapshot)</li>
+              <li>2 rounds of revisions</li>
             </ul>
+
+            <p class="fineprint">Maintenance includes ongoing optimization, small flow updates, and support.</p>
           </div>
 
-          <!-- PRO -->
-          <div class="card">
-            <h3 style="margin:0 0 4px">Pro</h3>
-            <p class="mutedline">Advanced automation + routing</p>
+          <!-- Pro -->
+          <div class="plan">
+            <h3>Pro</h3>
+            <p class="kicker">Advanced automation + routing for higher-volume teams.</p>
 
-            <div class="price">$999 <small>/ one-time setup</small></div>
-            <div class="badge">Good for: Small businesses running ops</div>
+            <div class="price-row">
+              <div class="price-box">
+                <div class="price-label">Setup</div>
+                <div class="price">$1,497 <small>one-time</small></div>
+              </div>
+              <div class="price-box">
+                <div class="price-label">Maintenance</div>
+                <div class="price">$199 <small>/ month</small></div>
+              </div>
+            </div>
 
-            <p class="goodfor">
-              Ideal for small businesses that want multi-channel routing, automation workflows, and clear performance tracking.
-            </p>
+            <p class="goodfor"><b>Good for:</b> small businesses ready to scale automation and reduce missed opportunities.</p>
 
             <ul class="features">
               <li>Everything in Growth</li>
-              <li>Advanced automations (email/SMS/WhatsApp routing)</li>
+              <li>Advanced automations (email / WhatsApp routing)</li>
               <li>Multi-channel lead delivery + tagging</li>
-              <li>SLA monitoring (response-time checks)</li>
-              <li>Monthly performance report</li>
+              <li>Reporting snapshot + SLA checks</li>
+              <li>Priority support + monthly tune-up</li>
             </ul>
+
+            <p class="fineprint">Best for teams that want automation + measurable performance improvements.</p>
           </div>
+
         </div>
 
+        <!-- CTA buttons -->
         <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
-          <a class="btn primary" href="/contact/">Get Free Consultation</a>
+          <a class="btn primary" href="/contact/">Book a free consultation</a>
           <a class="btn" href="/services/">See services</a>
           <a class="btn" href="#chat">Use live chat</a>
         </div>
 
-        <p style="margin-top:10px; color:var(--muted); font-size:13px; line-height:1.6">
-          * Pricing shown is for typical small-business setups. Final price can change if you need custom integrations, multiple locations, or advanced CRM work.
+        <p class="fineprint" style="margin-top:10px">
+          Pricing shown is for typical small-business setups. Complex CRM builds, multi-location routing, or heavy custom integrations may require a custom quote.
         </p>
+
+        <!-- FEATURE COMPARISON -->
+        <div class="hero-card" style="padding:16px; margin-top:18px;">
+          <h2 style="margin:0 0 6px" class="section-title">Feature comparison</h2>
+          <p class="section-sub" style="margin:0; max-width:80ch;">
+            Transparent, simple, and designed for small businesses. Upgrade anytime.
+          </p>
+
+          <div class="compare" aria-label="Feature comparison table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th class="col-head">Starter</th>
+                  <th class="col-head">Growth</th>
+                  <th class="col-head">Pro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>AI Website Chatbot</td>
+                  <td class="tick">✓</td>
+                  <td class="tick">✓</td>
+                  <td class="tick">✓</td>
+                </tr>
+                <tr>
+                  <td>Lead Capture + Email Alerts</td>
+                  <td class="tick">✓</td>
+                  <td class="tick">✓</td>
+                  <td class="tick">✓</td>
+                </tr>
+                <tr>
+                  <td>Lead Status Tracking (Sheets/CRM)</td>
+                  <td class="dash">—</td>
+                  <td class="tick">✓</td>
+                  <td class="tick">✓</td>
+                </tr>
+                <tr>
+                  <td>Smarter Qualification Flow</td>
+                  <td class="dash">—</td>
+                  <td class="tick">✓</td>
+                  <td class="tick">✓</td>
+                </tr>
+                <tr>
+                  <td>Follow-up Prompts & Reminders</td>
+                  <td class="dash">—</td>
+                  <td class="tick">✓</td>
+                  <td class="tick">✓</td>
+                </tr>
+                <tr>
+                  <td>WhatsApp / Multi-channel Routing</td>
+                  <td class="dash">—</td>
+                  <td class="dash">—</td>
+                  <td class="tick">✓</td>
+                </tr>
+                <tr>
+                  <td>Reporting + SLA Monitoring</td>
+                  <td class="dash">—</td>
+                  <td class="dash">—</td>
+                  <td class="tick">✓</td>
+                </tr>
+                <tr>
+                  <td>Monthly Maintenance Included</td>
+                  <td class="tick">✓</td>
+                  <td class="tick">✓</td>
+                  <td class="tick">✓</td>
+                </tr>
+                <tr class="note-row">
+                  <td colspan="4">
+                    * “Maintenance” covers monitoring, small updates, and support. Large rebuilds or major new integrations are quoted separately.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         <div id="chat" style="height:1px;"></div>
       </section>
