@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-wistarterdth, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mohammad AI Solutions | AI Chatbots • Automation • Smart Websites</title>
   <meta name="description" content="We build AI chatbots, automation, and smart websites for small businesses. Capture more leads, respond faster, and automate follow-ups." />
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon.png">
@@ -589,15 +589,16 @@
           </p>
 
           <div style="display:flex; gap:12px; flex-wrap:wrap">
-            <a class="btn primary"
-   href="mailto:hello@mohammadaisolutions.com?subject=Free%20AI%20Automation%20Consultation"
-   target="_self">
-  Email us
-</a>
-            <button class="btn btn-ghost" id="btnLiveChat" type="button">
-  Use live chat
-</button>
-          </div>
+  <a class="btn primary"
+     href="mailto:hello@mohammadaisolutions.com?subject=Free%20AI%20Automation%20Consultation"
+     target="_self">
+    Email us
+  </a>
+
+  <button class="btn" id="btnLiveChat" type="button">
+    Use live chat
+  </button>
+</div>
 
           <p style="margin:14px 0 0; color:var(--muted2); font-size:13px;">
             Email: <b style="color:var(--text)">hello@mohammadaisolutions.com</b> • Cambridge, Ontario • Serving worldwide
@@ -656,46 +657,42 @@
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
   </script>
-  <script>
+ <script>
   (function () {
-    function openLiveChat() {
-      // Try clicking common Flowise widget buttons/toggles
-      const selectors = [
-        'button[aria-label="Open chat"]',
-        'button[aria-label="Chat"]',
-        '.flowise-chatbot-button',
-        '.chatbot-button',
-        '#flowise-chatbot-button',
-        'button[data-testid="chat-open"]',
-        'button[title*="chat" i]'
-      ];
+    const btn = document.getElementById("btnLiveChat");
+    if (!btn) return;
 
-      for (const sel of selectors) {
-        const el = document.querySelector(sel);
-        if (el) { el.click(); return true; }
+    function clickFlowiseButton() {
+      // Flowise injects a floating launcher button. We try a few likely selectors first.
+      const known =
+        document.querySelector('button[id*="flowise" i]') ||
+        document.querySelector('div[id*="flowise" i] button') ||
+        document.querySelector('button[aria-label*="chat" i]') ||
+        document.querySelector('button[title*="chat" i]');
+
+      if (known) { known.click(); return true; }
+
+      // Fallback: click the most likely floating launcher button (bottom-right)
+      const allButtons = Array.from(document.querySelectorAll("button"));
+      const floating = allButtons.filter(b => {
+        const s = window.getComputedStyle(b);
+        return s.position === "fixed" && (s.right !== "auto" || s.bottom !== "auto");
+      });
+
+      if (floating.length) {
+        floating[floating.length - 1].click();
+        return true;
       }
-
-      // Fallback: click the bottom-right floating button if present
-      const buttons = Array.from(document.querySelectorAll('button'));
-      const maybeChat = buttons.find(b =>
-        (b.innerText || '').toLowerCase().includes('chat') ||
-        (b.getAttribute('aria-label') || '').toLowerCase().includes('chat')
-      );
-      if (maybeChat) { maybeChat.click(); return true; }
 
       return false;
     }
 
-    const btn = document.getElementById('btnLiveChat');
-    if (!btn) return;
-
-    btn.addEventListener('click', function () {
-      // Keep trying for up to ~6 seconds to catch late-loading widget
+    btn.addEventListener("click", () => {
       let tries = 0;
-      const timer = setInterval(() => {
+      const t = setInterval(() => {
         tries++;
-        if (openLiveChat() || tries > 30) clearInterval(timer);
-      }, 200);
+        if (clickFlowiseButton() || tries > 40) clearInterval(t);
+      }, 150);
     });
   })();
 </script>
