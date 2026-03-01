@@ -594,7 +594,9 @@
             <a class="btn btn-outline" href="mailto:hello@mohammadaisolutions.com?subject=Free%20AI%20Automation%20Consultation">
   Email us
 </a>
-            <a class="btn" href="#chat">Use live chat</a>
+            <button class="btn btn-ghost" id="btnLiveChat" type="button">
+  Use live chat
+</button>
           </div>
 
           <p style="margin:14px 0 0; color:var(--muted2); font-size:13px;">
@@ -654,5 +656,48 @@
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
   </script>
+  <script>
+  (function () {
+    function openLiveChat() {
+      // Try clicking common Flowise widget buttons/toggles
+      const selectors = [
+        'button[aria-label="Open chat"]',
+        'button[aria-label="Chat"]',
+        '.flowise-chatbot-button',
+        '.chatbot-button',
+        '#flowise-chatbot-button',
+        'button[data-testid="chat-open"]',
+        'button[title*="chat" i]'
+      ];
+
+      for (const sel of selectors) {
+        const el = document.querySelector(sel);
+        if (el) { el.click(); return true; }
+      }
+
+      // Fallback: click the bottom-right floating button if present
+      const buttons = Array.from(document.querySelectorAll('button'));
+      const maybeChat = buttons.find(b =>
+        (b.innerText || '').toLowerCase().includes('chat') ||
+        (b.getAttribute('aria-label') || '').toLowerCase().includes('chat')
+      );
+      if (maybeChat) { maybeChat.click(); return true; }
+
+      return false;
+    }
+
+    const btn = document.getElementById('btnLiveChat');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+      // Keep trying for up to ~6 seconds to catch late-loading widget
+      let tries = 0;
+      const timer = setInterval(() => {
+        tries++;
+        if (openLiveChat() || tries > 30) clearInterval(timer);
+      }, 200);
+    });
+  })();
+</script>
 </body>
 </html>
