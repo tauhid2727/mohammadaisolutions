@@ -595,9 +595,20 @@
     Email us
   </a>
 
-  <button class="btn" id="btnLiveChat" type="button">
-    Use live chat
-  </button>
+  <button onclick="openChat()" class="btn-secondary">
+  Use live chat
+</button>
+
+<script>
+function openChat() {
+  const chatButton = document.querySelector('[data-testid="flowise-chatbot-button"]');
+  if (chatButton) {
+    chatButton.click();
+  } else {
+    alert("Chat is loading. Please wait a few seconds and try again.");
+  }
+}
+</script>
 </div>
 
           <p style="margin:14px 0 0; color:var(--muted2); font-size:13px;">
