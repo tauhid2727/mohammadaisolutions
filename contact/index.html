@@ -40,7 +40,9 @@
 
         <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
           <a class="btn primary" href="mailto:hello@mohammadaisolutions.com?subject=Free%20Consultation%20Request">Email us</a>
-          <a class="btn" href="#chat">Use live chat</a>
+          <button type="button" class="btn" onclick="openLiveChat()">
+  Use live chat
+</button>
         </div>
 
         <div style="margin-top:14px; color:var(--muted2); font-size:14px; line-height:1.7">
@@ -83,6 +85,19 @@
       }
     }
   });
+</script>
+  <script>
+function openLiveChat() {
+  const chatButton = document.querySelector('[data-testid="flowise-chatbot-button"]')
+    || document.querySelector('.flowise-chatbot-button')
+    || document.querySelector('.chatbot-toggler');
+
+  if (chatButton) {
+    chatButton.click();
+  } else {
+    alert("Chat is still loading. Please wait a few seconds and try again.");
+  }
+}
 </script>
 </body>
 </html>
