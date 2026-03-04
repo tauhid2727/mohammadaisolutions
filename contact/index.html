@@ -52,9 +52,9 @@
             Email us
           </a>
 
-          <button type="button" class="btn" onclick="openLiveChat()">
-            Use live chat
-          </button>
+          <button type="button" class="btn" onclick="scrollToChat()">
+  Use live chat
+</button>
         </div>
 
         <div style="margin-top:14px; color:var(--muted2); font-size:14px; line-height:1.7">
@@ -149,5 +149,27 @@
       }
     });
   </script>
+  <script>
+function scrollToChat() {
+
+  // Scroll to bottom right where chat bubble lives
+  window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: "smooth"
+  });
+
+  // Small highlight animation
+  const bubble = document.querySelector("flowise-chatbot");
+
+  if (bubble) {
+    bubble.style.transition = "transform 0.4s";
+    bubble.style.transform = "scale(1.15)";
+
+    setTimeout(() => {
+      bubble.style.transform = "scale(1)";
+    }, 400);
+  }
+}
+</script>
 </body>
 </html>
