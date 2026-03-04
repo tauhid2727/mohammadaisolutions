@@ -712,5 +712,68 @@ function openChat() {
     });
   })();
 </script>
+  <script>
+(function () {
+  function findFlowiseOpenButton() {
+    // New Flowise embed often renders a <flowise-chatbot> web component
+    const flowiseEl = document.querySelector("flowise-chatbot");
+    if (flowiseEl && flowiseEl.shadowRoot) {
+      // Try common button selectors inside shadow root
+      return (
+        flowiseEl.shadowRoot.querySelector('button[aria-label*="open" i]') ||
+        flowiseEl.shadowRoot.querySelector('button[title*="open" i]') ||
+        flowiseEl.shadowRoot.querySelector("button") ||
+        flowiseEl.shadowRoot.querySelector('[role="button"]')
+      );
+    }
+
+    // Fallbacks for older builds / different selectors
+    return (
+      document.querySelector('[data-testid="flowise-chatbot-button"]') ||
+      document.querySelector(".flowise-chatbot-button") ||
+      document.querySelector("button.flowise-chatbot-button") ||
+      document.querySelector(".chatbot-toggler")
+    );
+  }
+
+  function openChatWithRetry() {
+    // Try immediately
+    const immediate = findFlowiseOpenButton();
+    if (immediate) {
+      immediate.click();
+      return;
+    }
+
+    // Retry while the widget finishes loading
+    let tries = 0;
+    const maxTries = 40; // 40 * 250ms = 10 seconds
+
+    const timer = setInterval(() => {
+      tries++;
+      const btn = findFlowiseOpenButton();
+
+      if (btn) {
+        btn.click();
+        clearInterval(timer);
+        return;
+      }
+
+      if (tries >= maxTries) {
+        clearInterval(timer);
+        alert("Chat is still loading. Please wait a few seconds and try again.");
+      }
+    }, 250);
+  }
+
+  // One click handler for ALL buttons that have data-open-livechat
+  document.addEventListener("click", function (e) {
+    const trigger = e.target.closest("[data-open-livechat]");
+    if (!trigger) return;
+
+    e.preventDefault();
+    openChatWithRetry();
+  });
+})();
+</script>
 </body>
 </html>
