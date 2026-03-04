@@ -264,5 +264,22 @@
   });
 })();
 </script>
+  <script>
+setTimeout(() => {
+
+  // Do not auto open if user already opened it
+  const chatWindow =
+    document.querySelector('.flowise-chatbot-window') ||
+    document.querySelector('.chatbot-container');
+
+  if(chatWindow) return;
+
+  // Open chat if function exists
+  if(typeof openLiveChat === "function"){
+    openLiveChat();
+  }
+
+},10000);
+</script>
 </body>
 </html>
