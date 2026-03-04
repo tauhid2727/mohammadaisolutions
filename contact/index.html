@@ -40,9 +40,7 @@
 
         <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
           <a class="btn primary" href="mailto:hello@mohammadaisolutions.com?subject=Free%20Consultation%20Request">Email us</a>
-          <button type="button" class="btn" onclick="openLiveChat()">
-  Use live chat
-</button>
+         <button type="button" class="btn" onclick="openLiveChat()">Use live chat</button>
         </div>
 
         <div style="margin-top:14px; color:var(--muted2); font-size:14px; line-height:1.7">
@@ -63,15 +61,12 @@
   </footer>
   <script>document.getElementById("y").textContent = new Date().getFullYear();</script>
 
-  <script type="module">
-    import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
-    Chatbot.init({
-      chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
-      apiHost: "https://chat.mohammadaisolutions.com",
-      theme: { button: { backgroundColor:"#1DC7FF", right:20, bottom:20, size:"medium", iconColor:"white" } }
-    });
-  <script type="module">
+<!-- Flowise chat embed (ONLY ONCE) -->
+<script type="module">
   import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
+
+  window.__flowiseChatbot = Chatbot;
+
   Chatbot.init({
     chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
     apiHost: "https://chat.mohammadaisolutions.com",
@@ -86,18 +81,34 @@
     }
   });
 </script>
-  <script>
-function openLiveChat() {
-  const chatButton = document.querySelector('[data-testid="flowise-chatbot-button"]')
-    || document.querySelector('.flowise-chatbot-button')
-    || document.querySelector('.chatbot-toggler');
 
-  if (chatButton) {
-    chatButton.click();
-  } else {
-    alert("Chat is still loading. Please wait a few seconds and try again.");
+<!-- Use live chat button helper -->
+<script>
+  function openLiveChat() {
+    // 1) Try Flowise exposed methods (if available in future versions)
+    try {
+      if (window.__flowiseChatbot && typeof window.__flowiseChatbot.open === "function") {
+        window.__flowiseChatbot.open();
+        return;
+      }
+    } catch (e) {}
+
+    // 2) Click the floating bubble button (most reliable)
+    const selectors = [
+      '[data-testid="flowise-chatbot-button"]',
+      '.flowise-chatbot-button',
+      'button[aria-label*="chat" i]',
+      'button[title*="chat" i]',
+      '.chatbot-toggler'
+    ];
+
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (el) { el.click(); return; }
+    }
+
+    alert("Chat is still loading. Please wait 3–5 seconds and try again.");
   }
-}
 </script>
 </body>
 </html>
