@@ -52,9 +52,9 @@
             Email us
           </a>
 
-          <button type="button" class="btn" onclick="scrollToChat()">
-  Use live chat
-</button>
+          <button id="liveChatBtn" type="button" class="btn">
+            Use live chat
+          </button>
         </div>
 
         <div style="margin-top:14px; color:var(--muted2); font-size:14px; line-height:1.7">
@@ -75,66 +75,113 @@
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
 
-    function clickFlowiseOpen() {
-      // 1) Try normal selectors (some Flowise versions)
-      const normalBtn =
-        document.querySelector('[data-testid="flowise-chatbot-button"]') ||
-        document.querySelector('.flowise-chatbot-button') ||
-        document.querySelector('button.flowise-chatbot-button') ||
-        document.querySelector('#flowise-chatbot-button');
+    // ---- Shadow-DOM safe deep search ----
+    function deepFind(predicate, root = document, maxNodes = 5000) {
+      const queue = [root];
+      let scanned = 0;
 
-      if (normalBtn) {
-        normalBtn.click();
-        return true;
+      while (queue.length && scanned < maxNodes) {
+        const node = queue.shift();
+        scanned++;
+
+        try {
+          if (node instanceof Element && predicate(node)) return node;
+
+          // Traverse light DOM children
+          if (node && node.children && node.children.length) {
+            for (const child of node.children) queue.push(child);
+          }
+
+          // Traverse shadow DOM if present
+          if (node instanceof Element && node.shadowRoot) {
+            queue.push(node.shadowRoot);
+          }
+
+          // If it's a ShadowRoot / DocumentFragment, traverse its children
+          if (node && node.host === undefined && node.children && node.children.length) {
+            for (const child of node.children) queue.push(child);
+          }
+        } catch (e) {}
       }
+      return null;
+    }
 
-      // 2) Try Shadow DOM version: <flowise-chatbot>
+    function findFlowiseLauncherButton() {
+      // Prefer the <flowise-chatbot> custom element if it exists
       const flowiseEl = document.querySelector("flowise-chatbot");
       if (flowiseEl && flowiseEl.shadowRoot) {
-        const shadowBtn =
-          flowiseEl.shadowRoot.querySelector("button") ||
-          flowiseEl.shadowRoot.querySelector('[role="button"]');
-
-        if (shadowBtn) {
-          shadowBtn.click();
-          return true;
-        }
+        // Try common patterns inside the shadow root
+        const btn =
+          flowiseEl.shadowRoot.querySelector('[data-testid*="button"]') ||
+          flowiseEl.shadowRoot.querySelector('button[aria-label*="chat"]') ||
+          flowiseEl.shadowRoot.querySelector("button");
+        if (btn) return btn;
       }
 
-      // 3) Try a container wrapper fallback (rare)
-      const container = document.querySelector("#flowise-chatbot");
-      if (container) {
-        const btn = container.querySelector("button");
-        if (btn) {
-          btn.click();
-          return true;
-        }
-      }
+      // Fallback: deep search the whole DOM + all shadow roots
+      return deepFind((el) => {
+        if (!(el instanceof HTMLButtonElement)) return false;
 
-      return false;
+        // Ignore tiny buttons (like close icons) if possible
+        const r = el.getBoundingClientRect();
+        const bigEnough = r.width >= 30 && r.height >= 30;
+
+        const testId = (el.getAttribute("data-testid") || "").toLowerCase();
+        const aria = (el.getAttribute("aria-label") || "").toLowerCase();
+        const cls = (el.className || "").toString().toLowerCase();
+
+        const looksLikeLauncher =
+          testId.includes("chat") ||
+          testId.includes("button") ||
+          aria.includes("chat") ||
+          cls.includes("chat") ||
+          cls.includes("launcher") ||
+          cls.includes("toggler") ||
+          cls.includes("bubble");
+
+        return bigEnough && looksLikeLauncher;
+      });
     }
 
-    function openLiveChat() {
-      // Try immediately
-      if (clickFlowiseOpen()) return;
+    async function openLiveChat() {
+      // Scroll near bottom-right (optional but helps UX)
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 
-      // Retry for up to ~6 seconds
+      // Try for up to ~12 seconds (24 tries x 500ms)
+      const maxTries = 24;
       let tries = 0;
-      const t = setInterval(() => {
-        tries++;
-        if (clickFlowiseOpen() || tries >= 15) {
-          clearInterval(t);
-          if (tries >= 15) {
-            alert("Chat is still loading. Please wait a few seconds and try again.");
+
+      return new Promise((resolve) => {
+        const t = setInterval(() => {
+          tries++;
+          const btn = findFlowiseLauncherButton();
+
+          if (btn) {
+            try { btn.click(); } catch (e) {}
+            clearInterval(t);
+            resolve(true);
+            return;
           }
-        }
-      }, 400);
+
+          if (tries >= maxTries) {
+            clearInterval(t);
+            alert("Chat is still loading. Please wait a few seconds, then click the green bubble in the bottom-right.");
+            resolve(false);
+          }
+        }, 500);
+      });
     }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const liveBtn = document.getElementById("liveChatBtn");
+      if (liveBtn) liveBtn.addEventListener("click", openLiveChat);
+    });
   </script>
 
-  <!-- Flowise bubble (ONLY ONCE) -->
+  <!-- Flowise widget: ONLY ONCE -->
   <script type="module">
     import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
+
     Chatbot.init({
       chatflowid: "3108c056-0f57-4288-8e74-c66ecb5d03d5",
       apiHost: "https://chat.mohammadaisolutions.com",
@@ -149,27 +196,5 @@
       }
     });
   </script>
-  <script>
-function scrollToChat() {
-
-  // Scroll to bottom right where chat bubble lives
-  window.scrollTo({
-    top: document.body.scrollHeight,
-    behavior: "smooth"
-  });
-
-  // Small highlight animation
-  const bubble = document.querySelector("flowise-chatbot");
-
-  if (bubble) {
-    bubble.style.transition = "transform 0.4s";
-    bubble.style.transform = "scale(1.15)";
-
-    setTimeout(() => {
-      bubble.style.transform = "scale(1)";
-    }, 400);
-  }
-}
-</script>
 </body>
 </html>
