@@ -198,3 +198,12 @@ footer{
   position: relative;
   z-index: 1;
 }
+/* Live chat button animation */
+[data-open-livechat]{
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+[data-open-livechat]:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(0,0,0,.25);
+}
