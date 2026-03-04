@@ -15,7 +15,10 @@
       <div class="nav">
         <a class="logo" href="/">
           <div class="logo-mark">AI</div>
-          <div>Mohammad AI Solutions<small>Chatbots • Automation • Smart Websites</small></div>
+          <div>
+            Mohammad AI Solutions
+            <small>Chatbots • Automation • Smart Websites</small>
+          </div>
         </a>
 
         <nav class="links">
@@ -40,7 +43,7 @@
         <h1 style="margin:12px 0 8px">Let’s talk about your business</h1>
 
         <p style="margin:0; color:var(--muted); max-width:70ch; line-height:1.6">
-          Send your business type + goal. If you want fastest response, use live chat.
+          Send your business type + goal. If you want the fastest response, use live chat.
         </p>
 
         <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
@@ -49,7 +52,7 @@
             Email us
           </a>
 
-          <button id="liveChatBtn" type="button" class="btn" onclick="openLiveChat()">
+          <button type="button" class="btn" onclick="openLiveChat()">
             Use live chat
           </button>
         </div>
@@ -72,39 +75,64 @@
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
 
-    // Robustly find the Flowise bubble button after it loads
-    function findFlowiseButton() {
-      return (
+    function clickFlowiseOpen() {
+      // 1) Try normal selectors (some Flowise versions)
+      const normalBtn =
         document.querySelector('[data-testid="flowise-chatbot-button"]') ||
         document.querySelector('.flowise-chatbot-button') ||
         document.querySelector('button.flowise-chatbot-button') ||
-        document.querySelector('.chatbot-toggler')
-      );
+        document.querySelector('#flowise-chatbot-button');
+
+      if (normalBtn) {
+        normalBtn.click();
+        return true;
+      }
+
+      // 2) Try Shadow DOM version: <flowise-chatbot>
+      const flowiseEl = document.querySelector("flowise-chatbot");
+      if (flowiseEl && flowiseEl.shadowRoot) {
+        const shadowBtn =
+          flowiseEl.shadowRoot.querySelector("button") ||
+          flowiseEl.shadowRoot.querySelector('[role="button"]');
+
+        if (shadowBtn) {
+          shadowBtn.click();
+          return true;
+        }
+      }
+
+      // 3) Try a container wrapper fallback (rare)
+      const container = document.querySelector("#flowise-chatbot");
+      if (container) {
+        const btn = container.querySelector("button");
+        if (btn) {
+          btn.click();
+          return true;
+        }
+      }
+
+      return false;
     }
 
-    // Keep checking until the bubble exists, then make the Live Chat button instantly work
-    let __flowiseBtn = null;
-    (function waitForFlowise() {
-      const btn = findFlowiseButton();
-      if (btn) {
-        __flowiseBtn = btn;
-        const live = document.getElementById("liveChatBtn");
-        if (live) live.dataset.ready = "1";
-        return;
-      }
-      setTimeout(waitForFlowise, 400);
-    })();
-
     function openLiveChat() {
-      if (__flowiseBtn) {
-        __flowiseBtn.click();
-        return;
-      }
-      alert("Chat is still loading. Please wait 2–3 seconds and try again.");
+      // Try immediately
+      if (clickFlowiseOpen()) return;
+
+      // Retry for up to ~6 seconds
+      let tries = 0;
+      const t = setInterval(() => {
+        tries++;
+        if (clickFlowiseOpen() || tries >= 15) {
+          clearInterval(t);
+          if (tries >= 15) {
+            alert("Chat is still loading. Please wait a few seconds and try again.");
+          }
+        }
+      }, 400);
     }
   </script>
 
-  <!-- Flowise widget (ONLY ONCE) -->
+  <!-- Flowise bubble (ONLY ONCE) -->
   <script type="module">
     import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
     Chatbot.init({
