@@ -11,11 +11,11 @@ const corsHeaders = (origin) => ({
   "Content-Type": "application/json",
 });
 
-// --- Slack helper ---
+// ---------- Slack helper ----------
 async function sendSlackAlert(lead) {
   const webhookUrl = process.env.SLACK_WEBHOOK_URL;
   if (!webhookUrl) {
-    console.log("Slack webhook not configured (SLACK_WEBHOOK_URL missing)");
+    console.log("Slack skipped: SLACK_WEBHOOK_URL missing");
     return { ok: false, skipped: true };
   }
 
@@ -41,7 +41,7 @@ async function sendSlackAlert(lead) {
     {
       type: "context",
       elements: [
-        { type: "mrkdwn", text: "✅ Logged to Google Sheets + Email sent. Reply here to coordinate follow-up." },
+        { type: "mrkdwn", text: "Lead captured from website chatbot." },
       ],
     },
   ];
@@ -53,8 +53,14 @@ async function sendSlackAlert(lead) {
       body: JSON.stringify({ text: "New lead received", blocks }),
     });
 
-    console.log("Slack status:", res.status);
-    return { ok: res.status >= 200 && res.status < 300, status: res.status };
+    const text = await res.text();
+    console.log("Slack status:", res.status, text);
+
+    return {
+      ok: res.status >= 200 && res.status < 300,
+      status: res.status,
+      body: text,
+    };
   } catch (err) {
     console.error("Slack error:", err?.message || String(err));
     return { ok: false, error: err?.message || String(err) };
@@ -64,7 +70,6 @@ async function sendSlackAlert(lead) {
 exports.handler = async (event) => {
   const allowOrigin = event.headers?.origin || event.headers?.Origin || "*";
 
-  // Preflight
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
@@ -73,7 +78,6 @@ exports.handler = async (event) => {
     };
   }
 
-  // Only POST
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -83,8 +87,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    // (Recommended) Optional security check:
-    // If you set LEAD_TOKEN in Netlify, only requests with header x-lead-token matching it will be accepted.
+    // ---------- Token check ----------
     const headerToken =
       event.headers?.["x-lead-token"] ||
       event.headers?.["X-Lead-Token"] ||
@@ -92,87 +95,130 @@ exports.handler = async (event) => {
       "";
 
     const expectedToken = process.env.LEAD_TOKEN || "";
-    if (expectedToken && headerToken && headerToken !== expectedToken) {
+
+    if (expectedToken && headerToken !== expectedToken) {
       return {
         statusCode: 401,
         headers: corsHeaders(allowOrigin),
-        body: JSON.stringify({ ok: false, error: "Unauthorized (bad token)" }),
+        body: JSON.stringify({
+          ok: false,
+          error: "Unauthorized (bad or missing token)",
+        }),
       };
     }
-    // If you want to REQUIRE the token header (stronger), uncomment:
-    /*
-    if (expectedToken && !headerToken) {
-      return {
-        statusCode: 401,
-        headers: corsHeaders(allowOrigin),
-        body: JSON.stringify({ ok: false, error: "Unauthorized (missing token)" }),
-      };
-    }
-    */
 
-    const body = JSON.parse(event.body || "{}");
+    // ---------- Parse incoming body ----------
+    const rawBody = JSON.parse(event.body || "{}");
 
-    // Normalize keys (keep your current behavior)
-    const fullName = body.fullName || body.FullName || body.name || "";
-    const preferredContact = body.preferredContact || body.contactMethod || "";
+    // IMPORTANT:
+    // Flowise may send either:
+    // { fullName: "...", ... }
+    // OR
+    // { body: { fullName: "...", ... } }
+    const payload =
+      rawBody && typeof rawBody.body === "object" && rawBody.body !== null
+        ? rawBody.body
+        : rawBody;
+
+    console.log("Incoming rawBody:", JSON.stringify(rawBody));
+    console.log("Parsed payload:", JSON.stringify(payload));
+
+    // ---------- Normalize keys ----------
+    const fullName = payload.fullName || payload.FullName || payload.name || "";
+    const preferredContact = payload.preferredContact || payload.contactMethod || "";
     const phoneOrWhatsApp =
-      body.phoneOrWhatsApp || body.phoneOrWhatsapp || body.phone || body.whatsapp || "";
-    const businessName = body.businessName || body.business || "";
-    const email = body.email || "";
-    const source = body.source || "MohammadAI Website";
+      payload.phoneOrWhatsApp ||
+      payload.phoneOrWhatsapp ||
+      payload.phone ||
+      payload.whatsapp ||
+      "";
+    const businessName = payload.businessName || payload.business || "";
+    const email = payload.email || "";
+    const source = payload.source || "MohammadAI Website";
 
-    // Minimal required fields
-    if (!fullName || !businessName) {
+    console.log("Normalized lead:", {
+      fullName,
+      preferredContact,
+      phoneOrWhatsApp,
+      businessName,
+      email,
+      source,
+    });
+
+    // ---------- Validate ----------
+    if (!fullName || !preferredContact || !phoneOrWhatsApp || !businessName) {
       return {
         statusCode: 400,
         headers: corsHeaders(allowOrigin),
         body: JSON.stringify({
           ok: false,
           error: "Missing required fields",
-          required: ["fullName", "businessName"],
+          debug: {
+            fullName,
+            preferredContact,
+            phoneOrWhatsApp,
+            businessName,
+            payload,
+          },
         }),
       };
     }
 
-    // 1) Send email via Resend
-    const emailResult = await resend.emails.send({
-      from: process.env.EMAIL_FROM,
-      to: process.env.EMAIL_TO,
-      subject: `🔥 New Lead from ${businessName}`,
-      html: `
-        <h2>New Website Lead</h2>
-        <p><strong>Name:</strong> ${fullName}</p>
-        <p><strong>Business:</strong> ${businessName}</p>
-        <p><strong>Preferred Contact:</strong> ${preferredContact || "Not provided"}</p>
-        <p><strong>Phone/WhatsApp:</strong> ${phoneOrWhatsApp || "Not provided"}</p>
-        <p><strong>Email:</strong> ${email || "Not provided"}</p>
-        <p><strong>Source:</strong> ${source}</p>
-      `,
-    });
-
-    // 2) Log to Google Sheet (Apps Script Web App)
-    let sheetsStatus = null;
-    let sheetsBody = null;
+    // ---------- 1) Send email ----------
+    let emailResult = null;
+    let emailError = null;
 
     try {
-      if (!process.env.GSHEET_WEBAPP_URL) throw new Error("Missing env var GSHEET_WEBAPP_URL");
-      if (!process.env.LEAD_TOKEN) throw new Error("Missing env var LEAD_TOKEN");
+      emailResult = await resend.emails.send({
+        from: process.env.EMAIL_FROM,
+        to: process.env.EMAIL_TO,
+        subject: `🔥 New Lead from ${businessName}`,
+        html: `
+          <h2>New Website Lead</h2>
+          <p><strong>Name:</strong> ${fullName}</p>
+          <p><strong>Business:</strong> ${businessName}</p>
+          <p><strong>Preferred Contact:</strong> ${preferredContact}</p>
+          <p><strong>Phone/WhatsApp:</strong> ${phoneOrWhatsApp}</p>
+          <p><strong>Email:</strong> ${email || "Not provided"}</p>
+          <p><strong>Source:</strong> ${source}</p>
+        `,
+      });
 
-      const payload = {
+      console.log("Resend result:", JSON.stringify(emailResult));
+    } catch (err) {
+      emailError = err?.message || String(err);
+      console.error("Resend error:", emailError);
+    }
+
+    // ---------- 2) Log to Google Sheets ----------
+    let sheetsStatus = null;
+    let sheetsBody = null;
+    let sheetsError = null;
+
+    try {
+      const gsheetUrl =
+        process.env.GSHEET_WEBAPP_URL || process.env.GOOGLE_SHEETS_WEBAPP_URL || "";
+
+      if (!gsheetUrl) throw new Error("Missing GSHEET_WEBAPP_URL / GOOGLE_SHEETS_WEBAPP_URL");
+      if (!process.env.LEAD_TOKEN) throw new Error("Missing LEAD_TOKEN");
+
+      const sheetPayload = {
         leadToken: process.env.LEAD_TOKEN,
         fullName,
         preferredContact,
-        phoneOrWhatsapp: phoneOrWhatsApp, // Apps Script accepts this
+        phoneOrWhatsapp: phoneOrWhatsApp,
         businessName,
         email: email || "",
         source,
         timestamp: new Date().toISOString(),
       };
 
-      const res = await fetch(process.env.GSHEET_WEBAPP_URL, {
+      console.log("Sending to Sheets:", JSON.stringify(sheetPayload));
+
+      const res = await fetch(gsheetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(sheetPayload),
       });
 
       sheetsStatus = res.status;
@@ -185,13 +231,13 @@ exports.handler = async (event) => {
       }
 
       console.log("Google Sheets status:", sheetsStatus);
-      console.log("Google Sheets response:", sheetsBody);
-    } catch (e) {
-      console.log("Google Sheets logging error:", e?.message || String(e));
-      sheetsBody = { ok: false, error: e?.message || String(e) };
+      console.log("Google Sheets response:", JSON.stringify(sheetsBody));
+    } catch (err) {
+      sheetsError = err?.message || String(err);
+      console.error("Google Sheets error:", sheetsError);
     }
 
-    // 3) Slack alert (do NOT fail the request if Slack fails)
+    // ---------- 3) Slack ----------
     const slack = await sendSlackAlert({
       fullName,
       preferredContact,
@@ -201,19 +247,33 @@ exports.handler = async (event) => {
       source,
     });
 
-    // 4) Success response (includes Sheets + Slack debug)
+    // ---------- Final result ----------
+    // Important: do not fail the whole request only because email is delayed.
+    const overallOk =
+      (!sheetsError && sheetsStatus >= 200 && sheetsStatus < 300) ||
+      (!emailError && emailResult);
+
     return {
-      statusCode: 200,
+      statusCode: overallOk ? 200 : 500,
       headers: corsHeaders(allowOrigin),
       body: JSON.stringify({
-        ok: true,
-        message: "Lead submitted successfully",
-        email: emailResult,
-        sheets: { status: sheetsStatus, body: sheetsBody },
+        ok: !!overallOk,
+        message: overallOk ? "Lead submitted successfully" : "Lead processing failed",
+        email: {
+          result: emailResult,
+          error: emailError,
+        },
+        sheets: {
+          status: sheetsStatus,
+          body: sheetsBody,
+          error: sheetsError,
+        },
         slack,
       }),
     };
   } catch (error) {
+    console.error("Function crash:", error?.message || String(error));
+
     return {
       statusCode: 500,
       headers: corsHeaders(allowOrigin),
