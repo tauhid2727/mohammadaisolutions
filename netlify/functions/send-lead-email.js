@@ -172,7 +172,7 @@ exports.handler = async (event) => {
       emailResult = await resend.emails.send({
         from: process.env.EMAIL_FROM,
         to: process.env.EMAIL_TO,
-        subject: `🔥 New Lead from ${businessName}`,
+        subject: `🔥 New AI Lead | ${businessName} | ${phoneOrWhatsApp}`,
         html: `
           <h2>New Website Lead</h2>
           <p><strong>Name:</strong> ${fullName}</p>
