@@ -183,7 +183,21 @@ exports.handler = async (event) => {
           <p><strong>Source:</strong> ${source}</p>
         `,
       });
-
+      // Send confirmation email to the lead (only if they provided email)
+      if (email && String(email).trim()) {
+        await resend.emails.send({
+          from: process.env.EMAIL_FROM,
+          to: email,
+          subject: "We received your request",
+          html: `
+            <p>Hi ${fullName},</p>
+            <p>Thanks for contacting <strong>Mohammad AI Solutions</strong>.</p>
+            <p>We received your request for <strong>${businessName}</strong>.</p>
+            <p>We will contact you shortly.</p>
+            <p>Best regards,<br>Mohammad AI Solutions</p>
+          `,
+        });
+      }
       console.log("Resend result:", JSON.stringify(emailResult));
     } catch (err) {
       emailError = err?.message || String(err);
