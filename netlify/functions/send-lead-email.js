@@ -215,23 +215,72 @@ if (!phoneValid && !emailValid) {
     });
 
     // ---------- Validate ----------
-    if (!fullName || !preferredContact || !phoneOrWhatsApp || !businessName) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders(allowOrigin),
-        body: JSON.stringify({
-          ok: false,
-          error: "Missing required fields",
-          debug: {
-            fullName,
-            preferredContact,
-            phoneOrWhatsApp,
-            businessName,
-            payload,
-          },
-        }),
-      };
-    }
+const cleanPhone = String(phoneOrWhatsApp || "").replace(/[^\d+]/g, "");
+const digitCount = cleanPhone.replace(/\D/g, "").length;
+const emailTrimmed = String(email || "").trim();
+
+const phoneValid = digitCount >= 10 && digitCount <= 15;
+const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed);
+
+// Basic required fields
+if (!fullName || !preferredContact || !businessName) {
+  return {
+    statusCode: 400,
+    headers: corsHeaders(allowOrigin),
+    body: JSON.stringify({
+      ok: false,
+      error: "Missing required fields",
+      required: ["fullName", "preferredContact", "businessName"],
+      debug: {
+        fullName,
+        preferredContact,
+        phoneOrWhatsApp,
+        businessName,
+        email,
+        payload,
+      },
+    }),
+  };
+}
+
+// Contact-method-based validation
+if (preferredContact.toLowerCase() === "phone" || preferredContact.toLowerCase() === "whatsapp") {
+  if (!phoneOrWhatsApp || !phoneValid) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(allowOrigin),
+      body: JSON.stringify({
+        ok: false,
+        error: "Invalid phone number. Please enter a valid phone/WhatsApp number with 10 to 15 digits.",
+      }),
+    };
+  }
+}
+
+if (preferredContact.toLowerCase() === "email") {
+  if (!emailTrimmed || !emailValid) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(allowOrigin),
+      body: JSON.stringify({
+        ok: false,
+        error: "Invalid email address. Please enter a valid email.",
+      }),
+    };
+  }
+}
+
+// At least one valid contact method must exist
+if (!phoneValid && !emailValid) {
+  return {
+    statusCode: 400,
+    headers: corsHeaders(allowOrigin),
+    body: JSON.stringify({
+      ok: false,
+      error: "At least one valid contact method is required.",
+    }),
+  };
+}
 
     // ---------- 1) Send email ----------
     let emailResult = null;
@@ -241,7 +290,7 @@ if (!phoneValid && !emailValid) {
       emailResult = await resend.emails.send({
         from: process.env.EMAIL_FROM,
         to: process.env.EMAIL_TO,
-        subject: `🔥 New AI Lead | ${businessName} | ${phoneOrWhatsApp}`,
+        subject: `🔥 New AI Lead | ${businessName} | ${phoneOrWhatsApp || email || "No contact number"}`
         html: `
           <h2>New Website Lead</h2>
           <p><strong>Name:</strong> ${fullName}</p>
