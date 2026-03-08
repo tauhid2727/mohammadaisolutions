@@ -143,6 +143,16 @@ const emailTrimmed = String(email || "").trim();
 const phoneValid = digitCount >= 10 && digitCount <= 15;
 const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed);
 
+console.log("Validation check:", {
+  preferredContact,
+  phoneOrWhatsApp,
+  cleanPhone,
+  digitCount,
+  phoneValid,
+  emailTrimmed,
+  emailValid
+});
+
 // Basic required fields
 if (!fullName || !preferredContact || !businessName) {
   return {
