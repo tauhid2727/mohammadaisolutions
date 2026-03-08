@@ -136,6 +136,65 @@ exports.handler = async (event) => {
     const email = payload.email || "";
     const source = payload.source || "MohammadAI Website";
 
+    const cleanPhone = String(phoneOrWhatsApp || "").replace(/[^\d+]/g, "");
+const digitCount = cleanPhone.replace(/\D/g, "").length;
+const emailTrimmed = String(email || "").trim();
+
+const phoneValid = digitCount >= 10 && digitCount <= 15;
+const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed);
+
+// Basic required fields
+if (!fullName || !preferredContact || !businessName) {
+  return {
+    statusCode: 400,
+    headers: corsHeaders(allowOrigin),
+    body: JSON.stringify({
+      ok: false,
+      error: "Missing required fields",
+      required: ["fullName", "preferredContact", "businessName"]
+    }),
+  };
+}
+
+// Contact-method-based validation
+if (preferredContact.toLowerCase() === "phone" || preferredContact.toLowerCase() === "whatsapp") {
+  if (!phoneOrWhatsApp || !phoneValid) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(allowOrigin),
+      body: JSON.stringify({
+        ok: false,
+        error: "Invalid phone number. Please enter a valid phone/WhatsApp number with 10 to 15 digits."
+      }),
+    };
+  }
+}
+
+if (preferredContact.toLowerCase() === "email") {
+  if (!emailTrimmed || !emailValid) {
+    return {
+      statusCode: 400,
+      headers: corsHeaders(allowOrigin),
+      body: JSON.stringify({
+        ok: false,
+        error: "Invalid email address. Please enter a valid email."
+      }),
+    };
+  }
+}
+
+// At least one contact method must exist
+if (!phoneValid && !emailValid) {
+  return {
+    statusCode: 400,
+    headers: corsHeaders(allowOrigin),
+    body: JSON.stringify({
+      ok: false,
+      error: "At least one valid contact method is required."
+    }),
+  };
+}
+
     console.log("Normalized lead:", {
       fullName,
       preferredContact,
