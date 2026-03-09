@@ -40,9 +40,7 @@ async function sendSlackAlert(lead) {
     { type: "divider" },
     {
       type: "context",
-      elements: [
-        { type: "mrkdwn", text: "Lead captured from website chatbot." },
-      ],
+      elements: [{ type: "mrkdwn", text: "Lead captured from website chatbot." }],
     },
   ];
 
@@ -110,11 +108,6 @@ exports.handler = async (event) => {
     // ---------- Parse incoming body ----------
     const rawBody = JSON.parse(event.body || "{}");
 
-    // IMPORTANT:
-    // Flowise may send either:
-    // { fullName: "...", ... }
-    // OR
-    // { body: { fullName: "...", ... } }
     const payload =
       rawBody && typeof rawBody.body === "object" && rawBody.body !== null
         ? rawBody.body
@@ -136,75 +129,6 @@ exports.handler = async (event) => {
     const email = payload.email || "";
     const source = payload.source || "MohammadAI Website";
 
-    const cleanPhone = String(phoneOrWhatsApp || "").replace(/[^\d+]/g, "");
-const digitCount = cleanPhone.replace(/\D/g, "").length;
-const emailTrimmed = String(email || "").trim();
-
-const phoneValid = digitCount >= 10 && digitCount <= 15;
-const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed);
-
-console.log("Validation check:", {
-  preferredContact,
-  phoneOrWhatsApp,
-  cleanPhone,
-  digitCount,
-  phoneValid,
-  emailTrimmed,
-  emailValid
-});
-
-// Basic required fields
-if (!fullName || !preferredContact || !businessName) {
-  return {
-    statusCode: 400,
-    headers: corsHeaders(allowOrigin),
-    body: JSON.stringify({
-      ok: false,
-      error: "Missing required fields",
-      required: ["fullName", "preferredContact", "businessName"]
-    }),
-  };
-}
-
-// Contact-method-based validation
-if (preferredContact.toLowerCase() === "phone" || preferredContact.toLowerCase() === "whatsapp") {
-  if (!phoneOrWhatsApp || !phoneValid) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders(allowOrigin),
-      body: JSON.stringify({
-        ok: false,
-        error: "Invalid phone number. Please enter a valid phone/WhatsApp number with 10 to 15 digits."
-      }),
-    };
-  }
-}
-
-if (preferredContact.toLowerCase() === "email") {
-  if (!emailTrimmed || !emailValid) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders(allowOrigin),
-      body: JSON.stringify({
-        ok: false,
-        error: "Invalid email address. Please enter a valid email."
-      }),
-    };
-  }
-}
-
-// At least one contact method must exist
-if (!phoneValid && !emailValid) {
-  return {
-    statusCode: 400,
-    headers: corsHeaders(allowOrigin),
-    body: JSON.stringify({
-      ok: false,
-      error: "At least one valid contact method is required."
-    }),
-  };
-}
-
     console.log("Normalized lead:", {
       fullName,
       preferredContact,
@@ -215,72 +139,74 @@ if (!phoneValid && !emailValid) {
     });
 
     // ---------- Validate ----------
-const cleanPhone = String(phoneOrWhatsApp || "").replace(/[^\d+]/g, "");
-const digitCount = cleanPhone.replace(/\D/g, "").length;
-const emailTrimmed = String(email || "").trim();
+    const cleanPhone = String(phoneOrWhatsApp || "").replace(/[^\d+]/g, "");
+    const digitCount = cleanPhone.replace(/\D/g, "").length;
+    const emailTrimmed = String(email || "").trim();
 
-const phoneValid = digitCount >= 10 && digitCount <= 15;
-const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed);
+    const phoneValid = digitCount >= 10 && digitCount <= 15;
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed);
 
-// Basic required fields
-if (!fullName || !preferredContact || !businessName) {
-  return {
-    statusCode: 400,
-    headers: corsHeaders(allowOrigin),
-    body: JSON.stringify({
-      ok: false,
-      error: "Missing required fields",
-      required: ["fullName", "preferredContact", "businessName"],
-      debug: {
-        fullName,
-        preferredContact,
-        phoneOrWhatsApp,
-        businessName,
-        email,
-        payload,
-      },
-    }),
-  };
-}
+    console.log("Validation check:", {
+      preferredContact,
+      phoneOrWhatsApp,
+      cleanPhone,
+      digitCount,
+      phoneValid,
+      emailTrimmed,
+      emailValid,
+    });
 
-// Contact-method-based validation
-if (preferredContact.toLowerCase() === "phone" || preferredContact.toLowerCase() === "whatsapp") {
-  if (!phoneOrWhatsApp || !phoneValid) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders(allowOrigin),
-      body: JSON.stringify({
-        ok: false,
-        error: "Invalid phone number. Please enter a valid phone/WhatsApp number with 10 to 15 digits.",
-      }),
-    };
-  }
-}
+    if (!fullName || !preferredContact || !businessName) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders(allowOrigin),
+        body: JSON.stringify({
+          ok: false,
+          error: "Missing required fields",
+          required: ["fullName", "preferredContact", "businessName"],
+        }),
+      };
+    }
 
-if (preferredContact.toLowerCase() === "email") {
-  if (!emailTrimmed || !emailValid) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders(allowOrigin),
-      body: JSON.stringify({
-        ok: false,
-        error: "Invalid email address. Please enter a valid email.",
-      }),
-    };
-  }
-}
+    if (
+      preferredContact.toLowerCase() === "phone" ||
+      preferredContact.toLowerCase() === "whatsapp"
+    ) {
+      if (!phoneOrWhatsApp || !phoneValid) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders(allowOrigin),
+          body: JSON.stringify({
+            ok: false,
+            error: "Invalid phone number. Please enter a valid phone/WhatsApp number with 10 to 15 digits.",
+          }),
+        };
+      }
+    }
 
-// At least one valid contact method must exist
-if (!phoneValid && !emailValid) {
-  return {
-    statusCode: 400,
-    headers: corsHeaders(allowOrigin),
-    body: JSON.stringify({
-      ok: false,
-      error: "At least one valid contact method is required.",
-    }),
-  };
-}
+    if (preferredContact.toLowerCase() === "email") {
+      if (!emailTrimmed || !emailValid) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders(allowOrigin),
+          body: JSON.stringify({
+            ok: false,
+            error: "Invalid email address. Please enter a valid email.",
+          }),
+        };
+      }
+    }
+
+    if (!phoneValid && !emailValid) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders(allowOrigin),
+        body: JSON.stringify({
+          ok: false,
+          error: "At least one valid contact method is required.",
+        }),
+      };
+    }
 
     // ---------- 1) Send email ----------
     let emailResult = null;
@@ -290,18 +216,18 @@ if (!phoneValid && !emailValid) {
       emailResult = await resend.emails.send({
         from: process.env.EMAIL_FROM,
         to: process.env.EMAIL_TO,
-        subject: `🔥 New AI Lead | ${businessName} | ${phoneOrWhatsApp || email || "No contact number"}`
+        subject: `🔥 New AI Lead | ${businessName} | ${phoneOrWhatsApp || email || "No contact number"}`,
         html: `
           <h2>New Website Lead</h2>
           <p><strong>Name:</strong> ${fullName}</p>
           <p><strong>Business:</strong> ${businessName}</p>
           <p><strong>Preferred Contact:</strong> ${preferredContact}</p>
-          <p><strong>Phone/WhatsApp:</strong> ${phoneOrWhatsApp}</p>
+          <p><strong>Phone/WhatsApp:</strong> ${phoneOrWhatsApp || "Not provided"}</p>
           <p><strong>Email:</strong> ${email || "Not provided"}</p>
           <p><strong>Source:</strong> ${source}</p>
         `,
       });
-      // Send confirmation email to the lead (only if they provided email)
+
       if (email && String(email).trim()) {
         await resend.emails.send({
           from: process.env.EMAIL_FROM,
@@ -316,6 +242,7 @@ if (!phoneValid && !emailValid) {
           `,
         });
       }
+
       console.log("Resend result:", JSON.stringify(emailResult));
     } catch (err) {
       emailError = err?.message || String(err);
@@ -379,8 +306,6 @@ if (!phoneValid && !emailValid) {
       source,
     });
 
-    // ---------- Final result ----------
-    // Important: do not fail the whole request only because email is delayed.
     const overallOk =
       (!sheetsError && sheetsStatus >= 200 && sheetsStatus < 300) ||
       (!emailError && emailResult);
