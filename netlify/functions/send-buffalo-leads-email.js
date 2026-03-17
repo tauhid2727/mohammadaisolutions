@@ -233,7 +233,7 @@ exports.handler = async (event) => {
 
     try {
       emailResult = await resend.emails.send({
-        from: process.env.EMAIL_FROM,
+        from: "onboarding@resend.dev",
         to: "leads.buffaloautodeals@gmail.com",
         subject: `🚗 New Car Lead | ${fullName} | ${phone || email || "No contact info"}`,
         html: `
