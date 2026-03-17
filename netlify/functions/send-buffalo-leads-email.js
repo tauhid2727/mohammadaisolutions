@@ -251,7 +251,7 @@ exports.handler = async (event) => {
       // ---------- 2) Optional auto-reply ----------
       if (emailTrimmed) {
         await resend.emails.send({
-          from: process.env.EMAIL_FROM,
+          from: "onboarding@resend.dev",
           to: emailTrimmed,
           subject: "We received your inquiry",
           html: `
