@@ -79,7 +79,7 @@ exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      headers: corsHeaders(allowOrigin),
+      headers: corsHeaders(),
       body: JSON.stringify({ ok: false, error: "Method not allowed" }),
     };
   }
@@ -97,7 +97,7 @@ exports.handler = async (event) => {
     if (expectedToken && headerToken !== expectedToken) {
       return {
         statusCode: 401,
-        headers: corsHeaders(allowOrigin),
+        headers: corsHeaders(),
         body: JSON.stringify({
           ok: false,
           error: "Unauthorized (bad or missing token)",
@@ -159,7 +159,7 @@ exports.handler = async (event) => {
     if (!fullName || !preferredContact || !businessName) {
       return {
         statusCode: 400,
-        headers: corsHeaders(allowOrigin),
+        headers: corsHeaders(),
         body: JSON.stringify({
           ok: false,
           error: "Missing required fields",
@@ -175,7 +175,7 @@ exports.handler = async (event) => {
       if (!phoneOrWhatsApp || !phoneValid) {
         return {
           statusCode: 400,
-          headers: corsHeaders(allowOrigin),
+          headers: corsHeaders(),
           body: JSON.stringify({
             ok: false,
             error: "Invalid phone number. Please enter a valid phone/WhatsApp number with 10 to 15 digits.",
@@ -188,7 +188,7 @@ exports.handler = async (event) => {
       if (!emailTrimmed || !emailValid) {
         return {
           statusCode: 400,
-          headers: corsHeaders(allowOrigin),
+          headers: corsHeaders(),
           body: JSON.stringify({
             ok: false,
             error: "Invalid email address. Please enter a valid email.",
@@ -200,7 +200,7 @@ exports.handler = async (event) => {
     if (!phoneValid && !emailValid) {
       return {
         statusCode: 400,
-        headers: corsHeaders(allowOrigin),
+        headers: corsHeaders(),
         body: JSON.stringify({
           ok: false,
           error: "At least one valid contact method is required.",
@@ -312,7 +312,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: overallOk ? 200 : 500,
-      headers: corsHeaders(allowOrigin),
+      headers: corsHeaders(),
       body: JSON.stringify({
         ok: !!overallOk,
         message: overallOk ? "Lead submitted successfully" : "Lead processing failed",
@@ -333,7 +333,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 500,
-      headers: corsHeaders(allowOrigin),
+      headers: corsHeaders(),
       body: JSON.stringify({
         ok: false,
         error: error?.message || "Server error",
