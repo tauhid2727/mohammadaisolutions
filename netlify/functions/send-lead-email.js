@@ -4,8 +4,8 @@ const { Resend } = require("resend");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const corsHeaders = (origin) => ({
-  "Access-Control-Allow-Origin": origin || "*",
+const corsHeaders = () => ({
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type, x-lead-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
@@ -69,12 +69,12 @@ exports.handler = async (event) => {
   const allowOrigin = event.headers?.origin || event.headers?.Origin || "*";
 
   if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: corsHeaders(allowOrigin),
-      body: "",
-    };
-  }
+  return {
+    statusCode: 204,
+    headers: corsHeaders(),
+    body: "",
+  };
+}
 
   if (event.httpMethod !== "POST") {
     return {
